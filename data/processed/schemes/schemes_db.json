@@ -1,0 +1,47 @@
+[
+  {
+    "scheme_id": "PM_KISAN_01",
+    "scheme_name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+    "category": "Direct Benefit Transfer",
+    "financial_benefit": "₹6,000 per year in 3 equal installments of ₹2,000",
+    "eligibility_criteria": {
+      "min_land_holding_ha": 0.0,
+      "max_land_holding_ha": 100.0,
+      "applicable_states": ["ALL"],
+      "allowed_occupations": ["Farmer", "Cultivator"],
+      "exclusions": ["Institutional landholders", "Income tax payers", "Retired pensioners with monthly pension > ₹10,000"]
+    },
+    "documents_required": ["Aadhaar Card", "Landholding Ownership Proof", "Bank Account Details"],
+    "official_url": "https://pmkisan.gov.in/"
+  },
+  {
+    "scheme_id": "PMFBY_02",
+    "scheme_name": "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+    "category": "Crop Insurance",
+    "financial_benefit": "Comprehensive risk coverage for pre-sowing to post-harvest crop losses",
+    "eligibility_criteria": {
+      "min_land_holding_ha": 0.0,
+      "max_land_holding_ha": 100.0,
+      "applicable_states": ["ALL"],
+      "allowed_crops": ["Food crops", "Oilseeds", "Annual Commercial/Horticultural crops"],
+      "exclusions": ["Unnotified crop types in non-notified areas"]
+    },
+    "documents_required": ["Aadhaar Card", "Land Sowing Certificate", "Bank Passbook"],
+    "official_url": "https://pmfby.gov.in/"
+  },
+  {
+    "scheme_id": "KCC_03",
+    "scheme_name": "Kisan Credit Card (KCC)",
+    "category": "Institutional Credit",
+    "financial_benefit": "Concessional credit up to ₹3 Lakh at 4% effective interest rate with prompt repayment",
+    "eligibility_criteria": {
+      "min_land_holding_ha": 0.0,
+      "max_land_holding_ha": 100.0,
+      "applicable_states": ["ALL"],
+      "allowed_occupations": ["Owner Cultivators", "Tenant Farmers", "Sharecroppers", "Self Help Groups"],
+      "exclusions": ["Defaulted bank loan holders"]
+    },
+    "documents_required": ["Identity Proof", "Address Proof", "Land Ownership Record"],
+    "official_url": "https://myscheme.gov.in/schemes/kcc"
+  }
+]
