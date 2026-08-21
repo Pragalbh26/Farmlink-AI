@@ -19,7 +19,7 @@ class CropListing(models.Model):
     location = models.CharField(max_length=100)
     image_url = models.URLField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    
+    image = models.ImageField(upload_to='crop_images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
