@@ -7,8 +7,13 @@ Built as a final-year capstone project, with a focus on usability for low-litera
 Quick feature list (optional, if you want bullets under the description):
 
 🌾 Direct farmer-to-buyer marketplace
+
 📈 AI-powered price prediction (current + forecasted)
+
 🚚 Transport booking for harvest delivery
+
 🌦️ Location-based weather alerts
+
 🔬 Crop disease detection from photos
+
 🤖 Multilingual chatbot for queries, government schemes & loan eligibility
