@@ -7,19 +7,19 @@ from .models import User, FarmerProfile, BuyerProfile, TransporterProfile
 class FarmerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = FarmerProfile
-        fields = ('farm_location', 'farm_size_acres', 'primary_crop')
+        fields = ('state', 'district', 'village')
 
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuyerProfile
-        fields = ('business_name', 'gstin', 'delivery_address')
+        fields = ('organization_name', 'location')
 
 
 class TransporterProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransporterProfile
-        fields = ('vehicle_type', 'capacity_tons', 'license_plate', 'service_radius_km')
+        fields = ('vehicle_type', 'capacity', 'is_available')
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -30,6 +30,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         fields = ('id', 'phone', 'name', 'password', 'role')
 
     def create(self, validated_data):
+        state = self.initial_data.get('state', 'Maharashtra')
+        district = self.initial_data.get('district', 'Pune')
         user = User.objects.create_user(
             phone=validated_data['phone'],
             name=validated_data.get('name', ''),
@@ -38,11 +40,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         )
         # Create corresponding profile based on role
         if user.role == 'farmer':
-            FarmerProfile.objects.create(user=user)
+            FarmerProfile.objects.create(user=user, state=state, district=district, village=self.initial_data.get('village', ''))
         elif user.role == 'buyer':
-            BuyerProfile.objects.create(user=user)
+            BuyerProfile.objects.create(user=user, location=district)
         elif user.role == 'transporter':
-            TransporterProfile.objects.create(user=user)
+            TransporterProfile.objects.create(user=user, vehicle_type='Not specified', capacity=0)
         return user
 
 

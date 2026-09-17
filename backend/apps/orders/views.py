@@ -35,6 +35,8 @@ def create_order_view(request):
 @permission_classes([IsAuthenticated])
 def my_orders_view(request):
     orders = Order.objects.filter(buyer=request.user).order_by('-created_at')
+    if request.user.role == 'farmer':
+        orders = Order.objects.filter(listing__farmer=request.user).order_by('-created_at')
     serializer = OrderSerializer(orders, many=True)
     return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
 

@@ -65,12 +65,14 @@ def schemes_list_view(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def schemes_eligibility_view(request):
-    # Mock response for eligibility evaluation
+    land = float(request.data.get('landHectares', 0) or 0)
+    state = request.data.get('state', '')
+    excluded = bool(request.data.get('isGovtEmployee') or request.data.get('isTaxPayer'))
     return Response({
         "success": True,
-        "data": {
-            "scheme_id": request.data.get('scheme_id', 1),
-            "status": "Eligible",
-            "explanation": "Profile matches all deterministic rules for land ownership."
-        }
+        "data": [
+            {"schemeId": "pm-kisan", "schemeName": "PM-KISAN", "status": "not_eligible" if excluded or land <= 0 else "eligible", "reasons": ["Government employees and income-tax payers are excluded." if excluded else "Landholding matches the basic PM-KISAN criteria."], "benefit": "Income support for eligible farmer families", "verifiedAt": "Official guidelines", "sourceUrl": "https://pmkisan.gov.in/"},
+            {"schemeId": "pmfby", "schemeName": "PM Fasal Bima Yojana", "status": "potentially_eligible", "reasons": ["Final eligibility depends on notified crops, season and enrollment dates."], "benefit": "Crop insurance protection", "verifiedAt": "Official guidelines", "sourceUrl": "https://pmfby.gov.in/"},
+            {"schemeId": "state-support", "schemeName": f"{state or 'State'} Farmer Support", "status": "potentially_eligible", "reasons": ["Check your state agriculture department for current applications."], "benefit": "State agricultural support", "verifiedAt": "State agriculture department", "sourceUrl": "https://www.myscheme.gov.in/"}
+        ]
     }, status=status.HTTP_200_OK)

@@ -68,14 +68,18 @@ TEMPLATES = [
 
 ASGI_APPLICATION = 'config.asgi.application'
 
+DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite3')
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': f'django.db.backends.{DB_ENGINE}',
         'NAME': os.getenv('POSTGRES_DB', 'agriconnect_db'),
         'USER': os.getenv('POSTGRES_USER', 'agriconnect_user'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'agriconnect_pass'),
         'HOST': os.getenv('POSTGRES_HOST', 'postgres_db'),
         'PORT': os.getenv('POSTGRES_PORT', '5432'),
+    } if DB_ENGINE == 'postgresql' else {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -103,7 +107,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174').split(',') if origin.strip()]
 
 CHANNEL_LAYERS = {
     "default": {

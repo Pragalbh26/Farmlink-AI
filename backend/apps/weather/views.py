@@ -11,10 +11,18 @@ def current_weather_view(request):
     return Response({
         "success": True,
         "data": {
-            "location": request.GET.get('location', 'Unknown'),
+            "location": request.GET.get('location', 'Pune, Maharashtra'),
             "temperature_celsius": 28.5,
+            "currentTemp": 28.5,
             "condition": "Sunny",
             "humidity_percent": 65,
+            "humidity": "65%",
+            "rainfallChance": "20%",
+            "windSpeed": "12 km/h",
+            "advisories": [],
+            "fiveDayForecast": [],
+            "verifiedTimestamp": datetime.now().isoformat(),
+            "source": "Source: India Meteorological Department (IMD)",
             "timestamp": datetime.now().isoformat()
         },
         "meta": {"source": "mock_weather_adapter"}

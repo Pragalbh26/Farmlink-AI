@@ -3,9 +3,16 @@ from .models import Order, TransportBooking
 from apps.listings.models import CropListing
 
 class OrderSerializer(serializers.ModelSerializer):
+    crop = serializers.CharField(source='listing.crop', read_only=True)
+    variety = serializers.CharField(source='listing.variety', read_only=True)
+    unit = serializers.CharField(source='listing.unit', read_only=True)
+    farmer_name = serializers.CharField(source='listing.farmer.name', read_only=True)
+    unit_price = serializers.DecimalField(source='agreed_price', max_digits=10, decimal_places=2, read_only=True)
+    total_amount = serializers.SerializerMethodField()
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     class Meta:
         model = Order
-        fields = ('id', 'buyer', 'listing', 'quantity', 'agreed_price', 'status', 'created_at', 'updated_at')
+        fields = ('id', 'buyer', 'listing', 'crop', 'variety', 'unit', 'quantity', 'agreed_price', 'unit_price', 'total_amount', 'farmer_name', 'status', 'created_at', 'createdAt', 'updated_at')
         read_only_fields = ('id', 'buyer', 'status', 'created_at', 'updated_at')
 
     def validate(self, data):
@@ -17,6 +24,9 @@ class OrderSerializer(serializers.ModelSerializer):
                 "quantity": f"Order quantity cannot exceed available listing quantity ({listing.quantity} {listing.unit})."
             })
         return data
+
+    def get_total_amount(self, obj):
+        return obj.quantity * obj.agreed_price
 
     def create(self, validated_data):
         validated_data['buyer'] = self.context['request'].user
