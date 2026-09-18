@@ -9,10 +9,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'default-dev-key')
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
 INSTALLED_APPS = [
     'daphne',
+    
+    # Cloudinary Storage must precede staticfiles for proper media overrides
+    'cloudinary_storage',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -24,6 +28,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'cloudinary',
 
     # Local Apps
     'apps.common',
@@ -33,8 +38,6 @@ INSTALLED_APPS = [
     'apps.weather',
     'apps.ai_services',
     'apps.reviews',
-    'cloudinary',
-    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -106,22 +109,30 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174').split(',') if origin.strip()]
+
+# Redis configuration for Channels
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
 
+# Cloudinary credentials
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME', 'your_default_cloud_name'),
-    'API_KEY': os.getenv('CLOUDINARY_API_KEY', 'your_api_key'),
-    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET', 'your_api_secret'),
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET', ''),
 }
-
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

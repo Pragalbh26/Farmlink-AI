@@ -1,6 +1,8 @@
+from django.db import transaction
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from .models import User, FarmerProfile, BuyerProfile, TransporterProfile
 
 
@@ -30,22 +32,36 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         fields = ('id', 'phone', 'name', 'password', 'role')
 
     def create(self, validated_data):
-        state = self.initial_data.get('state', 'Maharashtra')
-        district = self.initial_data.get('district', 'Pune')
-        user = User.objects.create_user(
-            phone=validated_data['phone'],
-            name=validated_data.get('name', ''),
-            password=validated_data['password'],
-            role=validated_data.get('role', 'farmer')
-        )
-        # Create corresponding profile based on role
-        if user.role == 'farmer':
-            FarmerProfile.objects.create(user=user, state=state, district=district, village=self.initial_data.get('village', ''))
-        elif user.role == 'buyer':
-            BuyerProfile.objects.create(user=user, location=district)
-        elif user.role == 'transporter':
-            TransporterProfile.objects.create(user=user, vehicle_type='Not specified', capacity=0)
-        return user
+        # Extract extra fields safely using context or initial_data
+        request_data = self.context.get('request').data if self.context.get('request') else self.initial_data
+        state = request_data.get('state', 'Maharashtra')
+        district = request_data.get('district', 'Pune')
+        village = request_data.get('village', '')
+
+        # Wrap in an atomic block to prevent orphaned users if profile creation fails
+        with transaction.atomic():
+            user = User.objects.create_user(
+                phone=validated_data['phone'],
+                name=validated_data.get('name', ''),
+                password=validated_data['password'],
+                role=validated_data.get('role', 'farmer')
+            )
+            
+            # Create corresponding profile based on role
+            if user.role == 'farmer':
+                FarmerProfile.objects.create(
+                    user=user, state=state, district=district, village=village
+                )
+            elif user.role == 'buyer':
+                BuyerProfile.objects.create(
+                    user=user, location=district
+                )
+            elif user.role == 'transporter':
+                TransporterProfile.objects.create(
+                    user=user, vehicle_type='Not specified', capacity=0
+                )
+                
+            return user
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -81,19 +97,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'phone', 'role')
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.save()
+        # Also wrap profile updates in an atomic block for safety
+        with transaction.atomic():
+            instance.name = validated_data.get('name', instance.name)
+            instance.save()
 
-        if instance.role == 'farmer' and 'farmer_profile' in validated_data:
-            farmer_data = validated_data.pop('farmer_profile')
-            FarmerProfile.objects.update_or_create(user=instance, defaults=farmer_data)
+            if instance.role == 'farmer' and 'farmer_profile' in validated_data:
+                farmer_data = validated_data.pop('farmer_profile')
+                FarmerProfile.objects.update_or_create(user=instance, defaults=farmer_data)
 
-        elif instance.role == 'buyer' and 'buyer_profile' in validated_data:
-            buyer_data = validated_data.pop('buyer_profile')
-            BuyerProfile.objects.update_or_create(user=instance, defaults=buyer_data)
+            elif instance.role == 'buyer' and 'buyer_profile' in validated_data:
+                buyer_data = validated_data.pop('buyer_profile')
+                BuyerProfile.objects.update_or_create(user=instance, defaults=buyer_data)
 
-        elif instance.role == 'transporter' and 'transporter_profile' in validated_data:
-            transporter_data = validated_data.pop('transporter_profile')
-            TransporterProfile.objects.update_or_create(user=instance, defaults=transporter_data)
+            elif instance.role == 'transporter' and 'transporter_profile' in validated_data:
+                transporter_data = validated_data.pop('transporter_profile')
+                TransporterProfile.objects.update_or_create(user=instance, defaults=transporter_data)
 
-        return instance
+            return instance

@@ -16,12 +16,16 @@ def create_order_view(request):
     if serializer.is_valid():
         order = serializer.save()
         
-        # Notify the farmer about the new order
+        # Notify the farmer with a dynamic message
         try:
             farmer_id = str(order.listing.farmer.id)
+            crop_name = order.listing.crop
+            qty = order.quantity
+            unit = order.listing.unit
+            
             send_realtime_notification(
                 user_id=farmer_id, 
-                message_text="Great news! A buyer just placed an order for your listing.",
+                message_text=f"Great news! A buyer just ordered {qty} {unit} of your {crop_name}.",
                 alert_type="new_order"
             )
         except AttributeError:
@@ -34,9 +38,15 @@ def create_order_view(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def my_orders_view(request):
-    orders = Order.objects.filter(buyer=request.user).order_by('-created_at')
-    if request.user.role == 'farmer':
-        orders = Order.objects.filter(listing__farmer=request.user).order_by('-created_at')
+    # select_related fetches the connected listing and farmer in a single SQL join, preventing N+1 bugs
+    base_query = Order.objects.select_related('listing', 'listing__farmer', 'buyer').order_by('-created_at')
+    
+    # Route logic based on user role
+    if getattr(request.user, 'role', '') == 'farmer':
+        orders = base_query.filter(listing__farmer=request.user)
+    else:
+        orders = base_query.filter(buyer=request.user)
+        
     serializer = OrderSerializer(orders, many=True)
     return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
 
