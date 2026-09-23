@@ -1,6 +1,10 @@
+from decimal import Decimal
+from django.db import transaction
 from rest_framework import serializers
+
 from .models import Order, TransportBooking
 from apps.users.models import User
+
 
 class OrderSerializer(serializers.ModelSerializer):
     crop = serializers.CharField(source='listing.crop', read_only=True)
@@ -14,6 +18,7 @@ class OrderSerializer(serializers.ModelSerializer):
     total_amount = serializers.SerializerMethodField()
     transport_status = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
     class Meta:
         model = Order
         fields = ('id', 'buyer', 'buyer_name', 'listing', 'crop', 'variety', 'unit', 'image_url', 'listing_location', 'quantity', 'agreed_price', 'unit_price', 'total_amount', 'farmer_name', 'status', 'transport_status', 'created_at', 'createdAt', 'updated_at')
@@ -29,7 +34,9 @@ class OrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'listing': 'This crop listing is no longer available.'})
         if listing.farmer_id == self.context['request'].user.id:
             raise serializers.ValidationError({'listing': 'You cannot place an order on your own listing.'})
-        
+
+        if quantity <= 0:
+            raise serializers.ValidationError({'quantity': 'Order quantity must be greater than zero.'})
         if quantity > listing.quantity:
             raise serializers.ValidationError({
                 "quantity": f"Order quantity cannot exceed available listing quantity ({listing.quantity} {listing.unit})."
@@ -37,7 +44,9 @@ class OrderSerializer(serializers.ModelSerializer):
         return data
 
     def get_total_amount(self, obj):
-        return obj.quantity * obj.agreed_price
+        if obj.quantity and obj.agreed_price:
+            return round(obj.quantity * obj.agreed_price, 2)
+        return Decimal('0.00')
 
     def get_transport_status(self, obj):
         booking = obj.transport_booking.first()

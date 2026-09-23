@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth import authenticate
 from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from .models import User, FarmerProfile, BuyerProfile, TransporterProfile
 
 
@@ -102,20 +103,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'phone', 'role')
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.save()
+        # Also wrap profile updates in an atomic block for safety
+        with transaction.atomic():
+            instance.name = validated_data.get('name', instance.name)
+            instance.save()
 
-        if instance.role == 'farmer' and ('farmer_profile' in validated_data or any(k in validated_data for k in ('state', 'district', 'village'))):
-            farmer_data = validated_data.pop('farmer_profile', {})
-            farmer_data.update({k: validated_data.pop(k) for k in ('state', 'district', 'village') if k in validated_data})
-            FarmerProfile.objects.update_or_create(user=instance, defaults=farmer_data)
+            if instance.role == 'farmer' and 'farmer_profile' in validated_data:
+                farmer_data = validated_data.pop('farmer_profile', {})
+                FarmerProfile.objects.update_or_create(user=instance, defaults=farmer_data)
 
-        elif instance.role == 'buyer' and 'buyer_profile' in validated_data:
-            buyer_data = validated_data.pop('buyer_profile')
-            BuyerProfile.objects.update_or_create(user=instance, defaults=buyer_data)
+            elif instance.role == 'farmer' and any(k in validated_data for k in ('state', 'district', 'village')):
+                farmer_data = {k: validated_data.pop(k) for k in ('state', 'district', 'village') if k in validated_data}
+                FarmerProfile.objects.update_or_create(user=instance, defaults=farmer_data)
 
-        elif instance.role == 'transporter' and 'transporter_profile' in validated_data:
-            transporter_data = validated_data.pop('transporter_profile')
-            TransporterProfile.objects.update_or_create(user=instance, defaults=transporter_data)
+            elif instance.role == 'buyer' and 'buyer_profile' in validated_data:
+                buyer_data = validated_data.pop('buyer_profile')
+                BuyerProfile.objects.update_or_create(user=instance, defaults=buyer_data)
 
-        return instance
+            elif instance.role == 'transporter' and 'transporter_profile' in validated_data:
+                transporter_data = validated_data.pop('transporter_profile')
+                TransporterProfile.objects.update_or_create(user=instance, defaults=transporter_data)
+
+            return instance

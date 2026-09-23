@@ -11,3 +11,8 @@ channels-redis>=4.1.0
 cloudinary>=1.36.0
 django-cloudinary-storage>=0.3.0
 Pillow>=10.0.0
+scikit-learn>=1.3.0
+joblib>=1.3.2
+Pillow>=10.0.0
+google-genai
+# have to add which image model used

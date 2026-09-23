@@ -2,7 +2,7 @@ FarmLink AI is a platform built to cut out the middleman between Indian farmers 
 
 Beyond the marketplace, AgriConnect brings together the tools a farmer actually needs in one place: transport booking to move harvests to buyers, location-based weather alerts, an AI crop disease detector that identifies issues from a photo and suggests treatment, and a chatbot that answers farming queries in plain language while helping farmers find relevant government schemes and check loan eligibility.
 
-Built as a final-year capstone project, with a focus on usability for low-literacy and low-bandwidth users across rural India.
+Built with a focus on usability for low-literacy and low-bandwidth users across rural India.
 
 Quick feature list (optional, if you want bullets under the description):
 
