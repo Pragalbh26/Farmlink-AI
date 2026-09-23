@@ -15,17 +15,18 @@ export const Profile = ({ onLogout }) => {
   const { addToast } = useToast();
 
   const [name, setName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
   const [state, setState] = useState(user?.state || 'Maharashtra');
   const [district, setDistrict] = useState(user?.district || 'Pune');
   const [village, setVillage] = useState(user?.village || 'Khed');
+  const [vehicleType, setVehicleType] = useState(user?.transporter_profile?.vehicle_type || '');
+  const [capacity, setCapacity] = useState(user?.transporter_profile?.capacity || '');
   const [saved, setSaved] = useState(false);
 
   const handleSave = async (e) => {
     e.preventDefault();
     try {
       const profileKey = user?.role === 'farmer' ? 'farmer_profile' : user?.role === 'buyer' ? 'buyer_profile' : 'transporter_profile';
-      const profile = user?.role === 'farmer' ? { state, district, village } : user?.role === 'buyer' ? { location: district } : {};
+      const profile = user?.role === 'farmer' ? { state, district, village } : user?.role === 'buyer' ? { location: district } : { vehicle_type: vehicleType, capacity: Number(capacity), is_available: user?.transporter_profile?.is_available ?? true };
       const res = await apiClient.request('/auth/profile', { method: 'PUT', body: { name, [profileKey]: profile } });
       if (!res.success) throw new Error('Unable to save profile');
       setSaved(true);
@@ -73,30 +74,23 @@ export const Profile = ({ onLogout }) => {
           <Input
             label="Phone Number"
             icon={Phone}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            value={user?.phone || ''}
+            disabled
             required
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Input
-              label="State"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-              required
-            />
-            <Input
-              label="District"
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              required
-            />
-            <Input
-              label="Village / Yard"
-              value={village}
-              onChange={(e) => setVillage(e.target.value)}
-            />
-          </div>
+          {user?.role === 'transporter' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input label="Vehicle Type" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} required />
+              <Input label="Capacity (tonnes)" type="number" min="0.01" step="0.01" value={capacity} onChange={(e) => setCapacity(e.target.value)} required />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Input label="State" value={state} onChange={(e) => setState(e.target.value)} required />
+              <Input label="District" value={district} onChange={(e) => setDistrict(e.target.value)} required />
+              <Input label="Village / Yard" value={village} onChange={(e) => setVillage(e.target.value)} />
+            </div>
+          )}
 
           {/* Language & Accessibility */}
           <div className="pt-4 border-t border-slate-100 space-y-4">

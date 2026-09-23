@@ -40,16 +40,14 @@ export const ChatMessage = ({ message }) => {
             </div>
             <div className="flex flex-wrap gap-2">
               {message.sources.map((src, idx) => (
-                <a
-                  key={idx}
-                  href={src.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 text-xs font-semibold transition"
-                >
-                  <span className="truncate max-w-[200px]">{src.title}</span>
-                  <ExternalLink className="w-3 h-3 shrink-0" />
-                </a>
+                src.url ? (
+                  <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 text-xs font-semibold transition">
+                    <span className="truncate max-w-[200px]">{src.title}</span>
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                  </a>
+                ) : (
+                  <span key={idx} className="inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold">{src.title}</span>
+                )
               ))}
             </div>
           </div>

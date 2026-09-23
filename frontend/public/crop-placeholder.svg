@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Crop image unavailable">
+  <rect width="640" height="400" fill="#ecfdf5"/>
+  <circle cx="320" cy="200" r="92" fill="#d1fae5"/>
+  <path d="M320 268V179m0 37c-43 0-65-22-65-58 38 0 60 18 65 58Zm0-21c0-42 22-64 60-64 0 38-19 59-60 64Z" fill="none" stroke="#047857" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"/>
+  <text x="320" y="340" fill="#475569" font-family="Arial,sans-serif" font-size="20" text-anchor="middle">Crop image unavailable</text>
+</svg>

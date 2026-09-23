@@ -66,12 +66,15 @@ export const OrderModal = ({ isOpen, onClose, listing, onOrderSuccess }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Listing Summary Card */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-          <div>
+          <div className="flex items-center gap-3 min-w-0">
+          <img src={listing.image || '/crop-placeholder.svg'} alt={listing.crop} className="w-16 h-16 rounded-xl object-cover shrink-0" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/crop-placeholder.svg'; }} />
+          <div className="min-w-0">
             <p className="font-bold text-slate-900">{listing.crop} ({listing.variety})</p>
             <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
               <MapPin className="w-3.5 h-3.5 text-emerald-700" />
               <span>{listing.district}, {listing.state}</span>
             </p>
+          </div>
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-500">Unit Price</p>

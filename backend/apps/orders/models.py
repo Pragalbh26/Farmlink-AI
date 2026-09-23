@@ -44,5 +44,10 @@ class TransportBooking(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=('order',), name='unique_transport_booking_per_order'),
+        ]
+
     def __str__(self):
         return f"Transport for Order {self.order.id} - {self.status}"

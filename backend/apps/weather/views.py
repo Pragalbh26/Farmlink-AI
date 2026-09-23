@@ -22,7 +22,7 @@ def current_weather_view(request):
             "advisories": [],
             "fiveDayForecast": [],
             "verifiedTimestamp": datetime.now().isoformat(),
-            "source": "Source: India Meteorological Department (IMD)",
+            "source": "Demonstration weather adapter; not live IMD data",
             "timestamp": datetime.now().isoformat()
         },
         "meta": {"source": "mock_weather_adapter"}

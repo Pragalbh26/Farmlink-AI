@@ -27,7 +27,7 @@ export const Sidebar = ({ currentTab, onSelectTab }) => {
       title: 'CORE PLATFORM',
       items: [
         { id: 'dashboard', label: t('home'), icon: LayoutDashboard, roles: ['farmer', 'buyer', 'transporter'] },
-        { id: 'marketplace', label: t('marketplace'), icon: Store, roles: ['farmer', 'buyer', 'transporter'] },
+        { id: 'marketplace', label: t('marketplace'), icon: Store, roles: ['farmer', 'buyer'] },
         { id: 'orders', label: t('orders'), icon: ShoppingBag, roles: ['farmer', 'buyer'] },
       ]
     },
@@ -36,7 +36,7 @@ export const Sidebar = ({ currentTab, onSelectTab }) => {
       items: [
         { id: 'prices', label: t('price_prediction'), icon: TrendingUp, roles: ['farmer', 'buyer'] },
         { id: 'disease', label: t('disease_detection'), icon: ScanLine, roles: ['farmer'] },
-        { id: 'chat', label: t('chat'), icon: MessageSquareText, roles: ['farmer', 'buyer', 'transporter'] },
+        { id: 'chat', label: t('chat'), icon: MessageSquareText, roles: ['farmer', 'buyer'] },
       ]
     },
     {
@@ -98,14 +98,14 @@ export const Sidebar = ({ currentTab, onSelectTab }) => {
         })}
       </div>
 
-      {/* Grounded AI Badge Card */}
+      {/* Feature status */}
       <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
         <div className="flex items-center gap-1.5 font-bold text-slate-800">
           <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-          <span>Grounded Intelligence</span>
+          <span>Feature status</span>
         </div>
         <p className="text-[11px] text-slate-500 leading-relaxed">
-          Powered by AGMARKNET, PlantVillage & official GOI portals with deterministic safety bounds.
+          Demo feeds are labeled in each tool. Live data and trained AI models are not configured in this installation.
         </p>
       </div>
     </aside>

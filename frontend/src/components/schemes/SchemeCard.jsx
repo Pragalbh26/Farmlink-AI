@@ -63,14 +63,7 @@ export const SchemeCard = ({ scheme, onCheckEligibility }) => {
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
             {t('verified_at')} {scheme.verifiedAt}
           </span>
-          <a
-            href={scheme.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 hover:underline"
-          >
-            Official Portal <ExternalLink className="w-3 h-3" />
-          </a>
+          {scheme.sourceUrl && scheme.sourceUrl !== '#' && <a href={scheme.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 hover:underline">Official Portal <ExternalLink className="w-3 h-3" /></a>}
         </div>
 
         {onCheckEligibility && (

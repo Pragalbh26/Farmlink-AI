@@ -68,9 +68,11 @@ def user_profile_view(request):
 
     if request.method == 'GET':
         serializer = UserProfileSerializer(user)
+        data = serializer.data
+        profile = data.get('farmer_profile') or data.get('buyer_profile') or data.get('transporter_profile') or {}
         return Response({
             "success": True,
-            "data": serializer.data
+            "data": {**data, **profile}
         }, status=status.HTTP_200_OK)
 
     elif request.method == 'PUT':

@@ -1,5 +1,8 @@
 from rest_framework import serializers
+import re
+from decimal import Decimal
 from django.contrib.auth import authenticate
+from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, FarmerProfile, BuyerProfile, TransporterProfile
 
@@ -23,12 +26,26 @@ class TransporterProfileSerializer(serializers.ModelSerializer):
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(write_only=True, min_length=8, trim_whitespace=False)
+    vehicle_type = serializers.CharField(required=False, max_length=50, allow_blank=False)
+    capacity = serializers.DecimalField(required=False, max_digits=10, decimal_places=2, min_value=Decimal('0.01'))
 
     class Meta:
         model = User
-        fields = ('id', 'phone', 'name', 'password', 'role')
+        fields = ('id', 'phone', 'name', 'password', 'role', 'vehicle_type', 'capacity')
 
+    def validate_phone(self, value):
+        normalized = re.sub(r'[\s()-]', '', value)
+        if not re.fullmatch(r'\+?[0-9]{10,15}', normalized):
+            raise serializers.ValidationError('Enter a valid phone number with 10 to 15 digits.')
+        return normalized
+
+    def validate_role(self, value):
+        if value not in ('farmer', 'buyer', 'transporter'):
+            raise serializers.ValidationError('Choose farmer, buyer, or transporter.')
+        return value
+
+    @transaction.atomic
     def create(self, validated_data):
         state = self.initial_data.get('state', 'Maharashtra')
         district = self.initial_data.get('district', 'Pune')
@@ -44,7 +61,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         elif user.role == 'buyer':
             BuyerProfile.objects.create(user=user, location=district)
         elif user.role == 'transporter':
-            TransporterProfile.objects.create(user=user, vehicle_type='Not specified', capacity=0)
+            TransporterProfile.objects.create(
+                user=user,
+                vehicle_type=validated_data.get('vehicle_type', 'Not specified'),
+                capacity=validated_data.get('capacity', 0),
+            )
         return user
 
 
@@ -53,7 +74,7 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        phone = data.get('phone')
+        phone = re.sub(r'[\s()-]', '', data.get('phone', ''))
         password = data.get('password')
 
         user = authenticate(phone=phone, password=password)
@@ -84,8 +105,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.save()
 
-        if instance.role == 'farmer' and 'farmer_profile' in validated_data:
-            farmer_data = validated_data.pop('farmer_profile')
+        if instance.role == 'farmer' and ('farmer_profile' in validated_data or any(k in validated_data for k in ('state', 'district', 'village'))):
+            farmer_data = validated_data.pop('farmer_profile', {})
+            farmer_data.update({k: validated_data.pop(k) for k in ('state', 'district', 'village') if k in validated_data})
             FarmerProfile.objects.update_or_create(user=instance, defaults=farmer_data)
 
         elif instance.role == 'buyer' and 'buyer_profile' in validated_data:

@@ -25,11 +25,34 @@ const saveStoredListings = (listings) => {
 
 const getStoredOrders = () => {
   const saved = localStorage.getItem('agriconnect_orders');
-  return saved ? JSON.parse(saved) : mockOrders;
+  const orders = saved ? JSON.parse(saved) : mockOrders;
+  return orders.map((order) => ({
+    ...order,
+    status: ({ pending: 'placed', accepted: 'confirmed', dispatched: 'confirmed', delivered: 'fulfilled' })[order.status] || order.status,
+    transport_status: order.transport_status || order.transportStatus || null,
+    unitPrice: order.unitPrice ?? order.unit_price ?? order.agreed_price,
+    totalAmount: Number(order.totalAmount ?? order.total_amount ?? (order.quantity * (order.unitPrice ?? order.agreed_price ?? 0))),
+    farmerName: order.farmerName || order.farmer_name || '',
+    buyerName: order.buyerName || order.buyer_name || '',
+    listing_location: order.listing_location || order.pickupLocation || '',
+    createdAt: order.createdAt || order.created_at || '',
+  }));
 };
 
 const saveStoredOrders = (orders) => {
   localStorage.setItem('agriconnect_orders', JSON.stringify(orders));
+};
+
+const getStoredTransportBookings = () => {
+  try {
+    return JSON.parse(localStorage.getItem('agriconnect_transport_bookings') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const saveStoredTransportBookings = (bookings) => {
+  localStorage.setItem('agriconnect_transport_bookings', JSON.stringify(bookings));
 };
 
 const normalizeListing = (listing) => ({
@@ -38,12 +61,12 @@ const normalizeListing = (listing) => ({
   farmerName: listing.farmerName || listing.farmer_name || '',
   farmerPhone: listing.farmerPhone || listing.farmer_phone || '',
   expectedPrice: listing.expectedPrice ?? listing.expected_price,
-  image: listing.image || listing.image_url || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80',
+  image: listing.image || listing.image_url || '/crop-placeholder.svg',
   district: listing.district || listing.location || '',
   state: listing.state || '',
 });
 const normalizeWeather = (data) => ({ ...data, verifiedTimestamp: data.verifiedTimestamp || data.timestamp, currentTemp: data.currentTemp ?? data.temperature_celsius, humidity: data.humidity || `${data.humidity_percent ?? 0}%`, rainfallChance: data.rainfallChance || '—', windSpeed: data.windSpeed || '—', advisories: data.advisories || [], fiveDayForecast: data.fiveDayForecast || [] });
-const normalizeScheme = (scheme) => ({ ...scheme, name: scheme.name || scheme.scheme_name, ministry: scheme.ministry || scheme.jurisdiction || 'Government of India', benefit: scheme.benefit || 'See official scheme details', sourceUrl: scheme.sourceUrl || scheme.source_url || '#' });
+const normalizeScheme = (scheme) => ({ ...scheme, name: scheme.name || scheme.scheme_name, ministry: scheme.ministry || scheme.jurisdiction || 'Government of India', benefit: scheme.benefit || 'See official scheme details', verifiedAt: scheme.verifiedAt || 'Not verified by a live service', sourceUrl: scheme.sourceUrl || scheme.source_url || '#' });
 const normalizePrice = (data, meta) => ({ ...data, commodity: data.commodity || data.crop, forecastPrice: data.forecastPrice ?? data.predicted_price, lowerBound: data.lowerBound ?? data.interval_min, upperBound: data.upperBound ?? data.interval_max, currentModal: data.currentModal ?? data.current_price, modelMetadata: data.modelMetadata || { modelVersion: meta?.model_version || 'baseline', trainingCutoffDate: '—', dataFreshness: 'Latest available', mae: '—', rmse: '—' }, chartData: data.chartData || [] });
 
 export const apiClient = {
@@ -75,7 +98,8 @@ export const apiClient = {
         headers,
       });
 
-      const json = res.status === 204 ? { success: true, data: null } : await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      const json = res.status === 204 ? { success: true, data: null } : contentType.includes('application/json') ? await res.json() : { success: false, error: { message: `Server returned ${res.status} without a JSON response. Check the API route and server logs.` } };
       if (!res.ok) {
         const error = json?.error;
         const message = typeof error === 'string' ? error : error?.message || Object.values(error || {}).flat().join(' ') || 'API request failed';
@@ -91,9 +115,23 @@ export const apiClient = {
       if (endpoint === '/schemes' && Array.isArray(json?.data)) json.data = json.data.map(normalizeScheme);
       if (endpoint === '/prices/predict' && json?.data) json.data = normalizePrice(json.data, json.meta);
       if (endpoint === '/schemes/eligibility' && json?.data && !Array.isArray(json.data)) json.data = [json.data];
-      if (endpoint === '/chat' && json?.data) json.data = { ...json.data, answer: json.data.answer || json.data.message, sources: json.data.sources || json.data.citations || [], isAbstention: Boolean(json.data.isAbstention) };
-      if (endpoint === '/disease/predict' && json?.data) json.data = { ...json.data, status: json.data.status || 'success', treatmentSuggestion: json.data.treatmentSuggestion || json.data.treatment_suggestion };
-      if (endpoint === '/orders/me' && Array.isArray(json?.data)) json.data = json.data.map((o) => ({ ...o, unitPrice: o.unitPrice ?? o.unit_price ?? o.agreed_price, totalAmount: Number(o.totalAmount ?? o.total_amount ?? (o.quantity * o.agreed_price)), farmerName: o.farmerName || o.farmer_name || '', createdAt: o.createdAt || o.created_at }));
+      if (endpoint === '/chat' && json?.data) json.data = {
+        ...json.data,
+        answer: json.data.answer || json.data.message,
+        sources: (json.data.sources || json.data.citations || []).map((source) => typeof source === 'string' ? { title: source } : source),
+        isAbstention: Boolean(json.data.isAbstention),
+      };
+      if (endpoint === '/disease/predict' && json?.data) json.data = {
+        ...json.data,
+        crop: json.data.crop || json.data.sampleType || 'Crop',
+        diseaseName: json.data.diseaseName || json.data.predicted_class || 'Classification unavailable',
+        status: json.data.status || (Number(json.data.confidence) >= 0.8 ? 'confident' : 'uncertain'),
+        symptoms: json.data.symptoms || json.data.predicted_class || 'No symptom details provided by the inference service.',
+        management: json.data.management || [json.data.treatmentSuggestion || json.data.treatment_suggestion].filter(Boolean),
+        treatmentSuggestion: json.data.treatmentSuggestion || json.data.treatment_suggestion,
+        modelVersion: json.data.modelVersion || json.meta?.model_version || 'unavailable',
+      };
+      if (endpoint === '/orders/me' && Array.isArray(json?.data)) json.data = json.data.map((o) => ({ ...o, unitPrice: o.unitPrice ?? o.unit_price ?? o.agreed_price, totalAmount: Number(o.totalAmount ?? o.total_amount ?? (o.quantity * o.agreed_price)), farmerName: o.farmerName || o.farmer_name || '', buyerName: o.buyerName || o.buyer_name || '', image: o.image || o.image_url || '', createdAt: o.createdAt || o.created_at }));
       return json;
     } catch (err) {
       throw new Error(err.message || 'The service is unavailable. Please try again.');
@@ -123,6 +161,7 @@ export const apiClient = {
         role: body.role || 'farmer',
         state: body.state || 'Maharashtra',
         district: body.district || 'Pune',
+        transporter_profile: body.role === 'transporter' ? { vehicle_type: body.vehicle_type || 'Not specified', capacity: body.capacity || 0, is_available: true } : undefined,
         avatar: body.role === 'farmer' ? '👨‍🌾' : (body.role === 'buyer' ? '🏢' : '🚛')
       };
       return {
@@ -130,6 +169,23 @@ export const apiClient = {
         data: { user: newUser, token: 'mock_jwt_token_sample_registered' },
         meta: { timestamp: new Date().toISOString() }
       };
+    }
+
+    if (endpoint === '/auth/profile' && method === 'GET') {
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem('agriconnect_user') || 'null'); } catch { user = null; }
+      return { success: true, data: user || mockUsers[0] };
+    }
+
+    if (endpoint === '/auth/profile' && method === 'PUT') {
+      let currentUser = {};
+      try { currentUser = JSON.parse(localStorage.getItem('agriconnect_user') || '{}'); } catch { currentUser = {}; }
+      const updatedUser = { ...currentUser, ...body };
+      for (const key of ['farmer_profile', 'buyer_profile', 'transporter_profile']) {
+        if (body[key]) updatedUser[key] = { ...(currentUser[key] || {}), ...body[key] };
+      }
+      localStorage.setItem('agriconnect_user', JSON.stringify(updatedUser));
+      return { success: true, data: updatedUser };
     }
 
     // Listings
@@ -169,19 +225,107 @@ export const apiClient = {
 
     // Orders
     if ((endpoint === '/orders' || endpoint === '/orders/me') && method === 'GET') {
+      let orders = getStoredOrders();
+      let currentUser = null;
+      try { currentUser = JSON.parse(localStorage.getItem('agriconnect_user') || 'null'); } catch { currentUser = null; }
+      if (currentUser?.role === 'farmer') orders = orders.filter((order) => (order.farmerId || order.farmer_id) === currentUser.id);
+      if (currentUser?.role === 'buyer') orders = orders.filter((order) => (order.buyerId || order.buyer_id) === currentUser.id);
       return {
         success: true,
-        data: getStoredOrders()
+        data: orders
       };
+    }
+
+    if (endpoint === '/orders/transport/requests' && method === 'GET') {
+      return { success: true, data: getStoredTransportBookings() };
+    }
+
+    if (endpoint === '/orders/transport/requests' && method === 'POST') {
+      const bookings = getStoredTransportBookings();
+      if (bookings.some((booking) => booking.order === body.order)) {
+        return { success: false, error: { message: 'Transport has already been requested for this order.' } };
+      }
+      const order = getStoredOrders().find((item) => item.id === body.order);
+      if (!order) return { success: false, error: { message: 'Order not found.' } };
+      const booking = {
+        ...body,
+        id: `trb_${Date.now()}`,
+        status: 'requested',
+        crop: order.crop,
+        quantity: order.quantity,
+        unit: order.unit,
+        farmer_name: order.farmerName || order.farmer_name || '',
+        farmer_phone: '',
+      };
+      saveStoredTransportBookings([booking, ...bookings]);
+      const orders = getStoredOrders();
+      const orderIndex = orders.findIndex((item) => item.id === body.order);
+      if (orderIndex >= 0) {
+        orders[orderIndex].transport_status = 'requested';
+        saveStoredOrders(orders);
+      }
+      return { success: true, data: booking };
+    }
+
+    const transportAction = endpoint.match(/^\/orders\/transport\/requests\/([^/]+)$/);
+    if (transportAction && method === 'PATCH') {
+      const bookings = getStoredTransportBookings();
+      const booking = bookings.find((item) => item.id === transportAction[1]);
+      if (!booking) return { success: false, error: { message: 'Transport request not found.' } };
+      booking.status = body.status;
+      if (body.status === 'accepted') {
+        try { booking.transporter = JSON.parse(localStorage.getItem('agriconnect_user') || '{}').id; } catch { booking.transporter = null; }
+      }
+      saveStoredTransportBookings(bookings);
+      const orders = getStoredOrders();
+      const orderIndex = orders.findIndex((item) => item.id === booking.order);
+      if (orderIndex >= 0) {
+        orders[orderIndex].transport_status = booking.status;
+        saveStoredOrders(orders);
+      }
+      return { success: true, data: booking };
+    }
+
+    const orderAction = endpoint.match(/^\/orders\/([^/]+)$/);
+    if (orderAction && method === 'PATCH') {
+      const orders = getStoredOrders();
+      const order = orders.find((item) => item.id === orderAction[1]);
+      if (!order) return { success: false, error: { message: 'Order not found.' } };
+      let currentUser = null;
+      try { currentUser = JSON.parse(localStorage.getItem('agriconnect_user') || 'null'); } catch { currentUser = null; }
+      if (currentUser?.role !== 'farmer' || (order.farmerId || order.farmer_id) !== currentUser.id) {
+        return { success: false, error: { message: 'Only the listing farmer can update this order.' } };
+      }
+      const nextStatus = { placed: 'confirmed', confirmed: 'fulfilled' }[order.status];
+      if (nextStatus !== body.status) return { success: false, error: { message: 'This order status transition is not allowed.' } };
+      order.status = body.status;
+      saveStoredOrders(orders);
+      return { success: true, data: order };
     }
 
     if (endpoint === '/orders' && method === 'POST') {
       const currentOrders = getStoredOrders();
+      const listing = getStoredListings().find((item) => item.id === body.listing);
+      if (!listing || Number(body.quantity) <= 0 || Number(body.quantity) > Number(listing.quantity)) {
+        return { success: false, error: { message: 'The requested crop or quantity is not available.' } };
+      }
+      listing.quantity = Number(listing.quantity) - Number(body.quantity);
+      if (listing.quantity === 0) listing.status = 'sold';
+      saveStoredListings(getStoredListings().map((item) => item.id === listing.id ? listing : item));
       const newOrder = {
         id: `ord_${Date.now()}`,
         ...body,
-        status: 'pending',
-        transportStatus: 'unbooked',
+        crop: listing.crop,
+        variety: listing.variety,
+        unit: listing.unit,
+        listing_location: listing.location || listing.district,
+        farmerName: listing.farmerName || listing.farmer_name,
+        quantity: Number(body.quantity),
+        agreed_price: Number(body.agreed_price),
+        unitPrice: Number(body.agreed_price),
+        totalAmount: Number(body.quantity) * Number(body.agreed_price),
+        status: 'placed',
+        transport_status: null,
         createdAt: new Date().toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit' })
       };
       const updated = [newOrder, ...currentOrders];

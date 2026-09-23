@@ -108,7 +108,7 @@ export const BuyerDashboard = ({ onNavigate }) => {
           </div>
           <div>
             <p className="text-xs font-semibold text-slate-500">Mandi Price Index</p>
-            <p className="text-2xl font-black text-emerald-700">Fair Rate Assured</p>
+            <p className="text-2xl font-black text-emerald-700">Demo estimates</p>
           </div>
         </Card>
       </div>

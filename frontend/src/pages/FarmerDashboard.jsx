@@ -37,7 +37,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
         ]);
         if (listRes.success) {
           // Filter listings owned by this farmer
-          const myListings = listRes.data.filter(l => l.farmerId === user?.id || l.farmerId === 'usr_farmer_01');
+          const myListings = listRes.data.filter(l => l.farmerId === user?.id);
           setListings(myListings);
         }
         if (wRes.success) setWeather(wRes.data);
@@ -54,7 +54,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
     {
       id: 'prices',
       title: t('check_mandi_cta'),
-      desc: 'AGMARKNET live prices & 7-day AI forecast',
+      desc: 'Mandi price demonstration and forecast preview',
       icon: TrendingUp,
       accent: 'bg-emerald-700 text-white',
       badge: 'Price AI',
@@ -94,7 +94,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
     {
       id: 'transport',
       title: t('book_transport_cta'),
-      desc: 'Find verified trucks & tractor delivery',
+      desc: 'Find registered transporters and request delivery',
       icon: Truck,
       accent: 'bg-amber-700 text-white',
       badge: 'Logistics',
@@ -161,7 +161,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md">
-                  IMD Agromet Advisory
+                  Weather demo
                 </span>
                 <span className="text-xs text-amber-800">{weather.location}</span>
               </div>
@@ -227,8 +227,8 @@ export const FarmerDashboard = ({ onNavigate }) => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <Badge variant="green" size="sm">Live AGMARKNET Stream</Badge>
-              <span className="text-xs text-slate-500">Updated Today, 06:00 AM IST</span>
+              <Badge variant="amber" size="sm">Demo price preview</Badge>
+              <span className="text-xs text-slate-500">Not connected to live AGMARKNET</span>
             </div>
             <h3 className="text-lg font-bold text-slate-900 mt-1">Tomato (Abhinav) — Pune APMC Market</h3>
           </div>
@@ -244,11 +244,11 @@ export const FarmerDashboard = ({ onNavigate }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           <div className="p-4 rounded-xl bg-white border border-slate-200">
-            <p className="text-xs font-semibold text-slate-500">Current Mandi Modal Price</p>
+            <p className="text-xs font-semibold text-slate-500">Sample Mandi Price</p>
             <p className="text-2xl font-black text-slate-900 mt-0.5">₹1,780 <span className="text-xs font-normal text-slate-500">/ Qtl</span></p>
           </div>
           <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-            <p className="text-xs font-semibold text-emerald-800">AI 7-Day Predicted Modal</p>
+            <p className="text-xs font-semibold text-emerald-800">Sample 7-Day Estimate</p>
             <p className="text-2xl font-black text-emerald-900 mt-0.5">₹1,940 <span className="text-xs font-bold text-emerald-700">(+₹160 ▲)</span></p>
           </div>
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">

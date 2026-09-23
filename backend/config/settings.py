@@ -7,6 +7,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+if os.getenv('SQLITE_PATH') and not Path(os.getenv('SQLITE_PATH')).is_absolute():
+    os.environ['SQLITE_PATH'] = str((BASE_DIR / os.getenv('SQLITE_PATH')).resolve())
+
 SECRET_KEY = os.getenv('SECRET_KEY', 'default-dev-key')
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
@@ -79,7 +82,7 @@ DATABASES = {
         'PORT': os.getenv('POSTGRES_PORT', '5432'),
     } if DB_ENGINE == 'postgresql' else {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': Path(os.getenv('SQLITE_PATH', str(BASE_DIR / 'agriconnect.sqlite3'))),
     }
 }
 
@@ -109,13 +112,14 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174').split(',') if origin.strip()]
 
+REDIS_URL = os.getenv('REDIS_URL')
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("redis", 6379)],
-        },
-    },
+        "CONFIG": {"hosts": [REDIS_URL]},
+    } if REDIS_URL else {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
 }
 
 CLOUDINARY_STORAGE = {

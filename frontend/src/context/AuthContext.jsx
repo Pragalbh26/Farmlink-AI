@@ -1,28 +1,51 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { mockUsers } from '../api/mockData';
 import { apiClient } from '../api/client';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('agriconnect_user');
-    return saved ? JSON.parse(saved) : (apiClient.isMockMode ? mockUsers[0] : null);
-  });
-
   const [token, setToken] = useState(() => {
     return localStorage.getItem('agriconnect_token') || (apiClient.isMockMode ? 'demo_token_123' : null);
   });
+  const [user, setUser] = useState(() => {
+    if (apiClient.isMockMode) {
+      try {
+        return JSON.parse(localStorage.getItem('agriconnect_user')) || mockUsers[0];
+      } catch {
+        return mockUsers[0];
+      }
+    }
+    return null;
+  });
+  const [isSessionLoading, setIsSessionLoading] = useState(() => Boolean(token && !apiClient.isMockMode));
+  const validationRequest = useRef(0);
 
   useEffect(() => {
-    if (!token || apiClient.isMockMode) return;
-    apiClient.request('/auth/profile').then((res) => {
-      if (res.success) setUser(res.data);
-    }).catch(() => {
+    const requestId = ++validationRequest.current;
+    if (apiClient.isMockMode) {
+      setIsSessionLoading(false);
+      return () => { validationRequest.current += 1; };
+    }
+    if (!token) {
       setUser(null);
-      setToken(null);
+      setIsSessionLoading(false);
+      return () => { validationRequest.current += 1; };
+    }
+
+    setIsSessionLoading(true);
+    apiClient.request('/auth/profile').then((res) => {
+      if (requestId === validationRequest.current) setUser(res.data);
+    }).catch(() => {
+      if (requestId === validationRequest.current) {
+        setUser(null);
+        setToken(null);
+      }
+    }).finally(() => {
+      if (requestId === validationRequest.current) setIsSessionLoading(false);
     });
-  }, []);
+    return () => { validationRequest.current += 1; };
+  }, [token]);
 
   useEffect(() => {
     if (user) {
@@ -45,12 +68,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginUser = (userData, userToken) => {
+    validationRequest.current += 1;
+    setIsSessionLoading(false);
     setUser(userData);
     setToken(userToken);
     if (userToken) localStorage.setItem('agriconnect_token', userToken);
   };
 
   const logout = () => {
+    validationRequest.current += 1;
+    setIsSessionLoading(false);
     setUser(null);
     setToken(null);
     localStorage.removeItem('agriconnect_user');
@@ -62,7 +89,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, loginAs, loginUser, logout, switchRole }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isSessionLoading, loginAs, loginUser, logout, switchRole }}>
       {children}
     </AuthContext.Provider>
   );

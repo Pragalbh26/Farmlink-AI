@@ -132,7 +132,7 @@ export const Marketplace = ({ onNavigate, onSelectListing }) => {
               listing={item}
               isOwner={user?.id === item.farmerId}
               onSelect={() => onSelectListing && onSelectListing(item)}
-              onPlaceOrder={(listing) => setSelectedListingForOrder(listing)}
+              onPlaceOrder={user?.role === 'buyer' ? (listing) => setSelectedListingForOrder(listing) : undefined}
             />
           ))}
         </div>

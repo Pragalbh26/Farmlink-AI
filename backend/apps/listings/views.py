@@ -33,7 +33,8 @@ def listing_detail_view(request, pk):
     except CropListing.DoesNotExist:
         return Response({"success": False, "error": "Listing not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    # Django automatically runs the IsListingOwner check here!
+    if request.method in ('PUT', 'DELETE') and (request.user.role != 'farmer' or listing.farmer_id != request.user.id):
+        return Response({"success": False, "error": {"message": "Only the farmer who created this listing can change it."}}, status=status.HTTP_403_FORBIDDEN)
     
     if request.method == 'GET':
         serializer = CropListingSerializer(listing)

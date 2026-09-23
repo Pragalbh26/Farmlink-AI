@@ -38,6 +38,17 @@ class AuthenticationTests(APITestCase):
         new_user = User.objects.get(phone="+919999999999")
         self.assertTrue(FarmerProfile.objects.filter(user=new_user).exists())
 
+    def test_transporter_registration_saves_vehicle_profile(self):
+        response = self.client.post(self.register_url, {
+            'phone': '+919888888888', 'password': 'driverpassword123',
+            'name': 'Pat Driver', 'role': 'transporter', 'vehicle_type': 'Mini truck', 'capacity': '2.50',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        driver = User.objects.get(phone='+919888888888')
+        self.assertEqual(driver.role, 'transporter')
+        self.assertEqual(driver.transporter_profile.vehicle_type, 'Mini truck')
+        self.assertEqual(str(driver.transporter_profile.capacity), '2.50')
+
     def test_user_login_success(self):
         """Ensure a user can log in with correct credentials."""
         data = {

@@ -20,6 +20,7 @@ export const ListingCard = ({ listing, onSelect, onPlaceOrder, isOwner = false }
           alt={listing.crop}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/crop-placeholder.svg'; }}
         />
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
           <Badge variant="green" size="md">

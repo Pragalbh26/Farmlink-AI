@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, MapPin, Phone, Star, ShieldCheck, CheckCircle2, Search, Filter } from 'lucide-react';
+import { Truck, Star, CheckCircle2 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
@@ -21,9 +21,10 @@ export const Transport = () => {
   // Booking Form State
   const [pickupAddress, setPickupAddress] = useState('Khed Farm Gate, Pune, Maharashtra');
   const [dropoffAddress, setDropoffAddress] = useState('Vashi Wholesale Terminal, Navi Mumbai');
-  const [cargoCrop, setCargoCrop] = useState('Tomato');
-  const [cargoQuantity, setCargoQuantity] = useState(40);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTransporters = async () => {
@@ -33,22 +34,37 @@ export const Transport = () => {
           setTransporters(res.data);
         }
       } catch (err) {
-        console.error(err);
+        setError(err.message || 'Unable to load transport providers.');
       } finally {
         setLoading(false);
       }
     };
     fetchTransporters();
+    apiClient.request('/orders/me').then((res) => {
+      if (res.success) setOrders(res.data.filter((order) => ['placed', 'confirmed'].includes(order.status)));
+    }).catch(() => {});
   }, []);
 
-  const handleBookSubmit = (e) => {
+  const handleBookSubmit = async (e) => {
     e.preventDefault();
+    if (!selectedOrder) {
+      setError('Place or select an order before requesting delivery.');
+      return;
+    }
     setBookingLoading(true);
-    setTimeout(() => {
-      setBookingLoading(false);
+    setError('');
+    try {
+      await apiClient.request('/orders/transport/requests', {
+        method: 'POST',
+        body: { order: selectedOrder, transporter: selectedTransporter.id, pickup_location: pickupAddress, dropoff_location: dropoffAddress }
+      });
       setBookingModalOpen(false);
       addToast(`Booking request sent to ${selectedTransporter?.name}!`, 'success');
-    }, 600);
+    } catch (err) {
+      setError(err.message || 'Unable to create the transport request.');
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   return (
@@ -56,15 +72,19 @@ export const Transport = () => {
       {/* Title */}
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <Badge variant="green" size="md">Rural Logistics Network</Badge>
+          <Badge variant="green" size="md">Registered transport providers</Badge>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
           {t('transport')} & Rural Freight Booking
         </h1>
         <p className="text-sm text-slate-500">
-          Connect directly with verified agricultural transporters for farm-gate harvest pickup and mandi delivery.
+          Request delivery from a registered transporter using one of your active purchase orders.
         </p>
       </div>
+
+      {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
+      {loading && <p role="status" className="text-sm text-slate-500">Loading transport providers…</p>}
+      {!loading && transporters.length === 0 && !error && <p className="text-sm text-slate-500">No transport providers are available right now.</p>}
 
       {/* Transporters List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -82,7 +102,7 @@ export const Transport = () => {
                   </div>
                 </div>
 
-                <Badge variant={tr.status === 'available' ? 'green' : 'amber'} size="sm">
+                  <Badge variant={tr.status === 'available' ? 'green' : 'amber'} size="sm">
                   {tr.status.toUpperCase()}
                 </Badge>
               </div>
@@ -98,7 +118,7 @@ export const Transport = () => {
                 </div>
               </div>
 
-              <div className="space-y-1 text-xs text-slate-600">
+              {tr.operationalCorridors.length > 0 && <div className="space-y-1 text-xs text-slate-600">
                 <p className="font-bold text-slate-500 uppercase text-[10px]">Frequent Operational Corridors</p>
                 <div className="flex flex-wrap gap-1">
                   {tr.operationalCorridors.map((c, idx) => (
@@ -107,21 +127,23 @@ export const Transport = () => {
                     </span>
                   ))}
                 </div>
-              </div>
+              </div>}
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
               <div className="flex items-center gap-1 text-xs text-slate-500">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                {tr.rating !== 'New' && <Star className="w-4 h-4 text-amber-500 fill-amber-500" />}
                 <span className="font-bold text-slate-800">{tr.rating}</span>
-                <span>({tr.experienceYears} yrs exp)</span>
+                <span>{tr.experienceYears === '—' ? '' : `(${tr.experienceYears} yrs exp)`}</span>
               </div>
 
               <Button
                 variant="primary"
                 size="sm"
+                disabled={tr.status !== 'available' || orders.length === 0}
                 onClick={() => {
                   setSelectedTransporter(tr);
+                  setError('');
                   setBookingModalOpen(true);
                 }}
                 icon={Truck}
@@ -140,6 +162,12 @@ export const Transport = () => {
         title={`Book Delivery — ${selectedTransporter?.name}`}
       >
         <form onSubmit={handleBookSubmit} className="space-y-4">
+          <label className="block text-sm font-semibold text-slate-700">Order to deliver
+            <select value={selectedOrder} onChange={(e) => setSelectedOrder(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3">
+              <option value="">Choose an order</option>
+              {orders.map((order) => <option key={order.id} value={order.id}>{order.crop} — {order.quantity} {order.unit} (#{String(order.id).slice(0, 8)})</option>)}
+            </select>
+          </label>
           <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-950">
             Vehicle: <strong>{selectedTransporter?.vehicleType}</strong> (Max: {selectedTransporter?.capacity})
           </div>
@@ -157,22 +185,6 @@ export const Transport = () => {
             onChange={(e) => setDropoffAddress(e.target.value)}
             required
           />
-
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Cargo Crop"
-              value={cargoCrop}
-              onChange={(e) => setCargoCrop(e.target.value)}
-              required
-            />
-            <Input
-              label="Quantity (Quintals)"
-              type="number"
-              value={cargoQuantity}
-              onChange={(e) => setCargoQuantity(e.target.value)}
-              required
-            />
-          </div>
 
           <div className="pt-3 flex gap-3">
             <Button variant="outline" size="md" onClick={() => setBookingModalOpen(false)} fullWidth>

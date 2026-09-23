@@ -27,6 +27,7 @@ export const DiseaseDetection = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [aiState, setAiState] = useState('empty'); // 'empty' | 'loading' | 'success' | 'uncertain' | 'unsupported' | 'error'
+  const [inferenceError, setInferenceError] = useState('');
 
   const demoSamples = [
     {
@@ -59,12 +60,18 @@ export const DiseaseDetection = () => {
     setImagePreview(url);
     if (!url) {
       setResult(null);
+      setInferenceError('');
       setAiState('empty');
       return;
     }
 
     // Determine sample type
     const matchedSample = demoSamples.find(s => s.name === sampleName);
+    if (!matchedSample) {
+      setInferenceError('Photo preview works, but this installation has no trained image-inference model configured. No diagnosis was generated from your photo.');
+      setAiState('error');
+      return;
+    }
     const sampleType = matchedSample ? matchedSample.type : 'Tomato';
 
     setAnalyzing(true);
@@ -96,6 +103,7 @@ export const DiseaseDetection = () => {
   const handleReset = () => {
     setImagePreview(null);
     setResult(null);
+    setInferenceError('');
     setAiState('empty');
   };
 
@@ -105,17 +113,17 @@ export const DiseaseDetection = () => {
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <Badge variant="green" size="md">
-            Computer Vision Classifier
+            Sample-based Inference Preview
           </Badge>
           <span className="text-xs text-slate-500 font-mono">
-            Backbone: MobileNetV2 Transfer Learning
+            Not a photo diagnosis
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
           {t('disease_detection')} & Diagnostics
         </h1>
         <p className="text-sm text-slate-500 max-w-2xl">
-          Capture or upload a clear leaf photo to receive preliminary AI disease classification and ICAR/KVK-approved cultural management advice.
+          Uploads are only previewed because this installation has no trained vision model connected. Sample buttons show demonstration responses and must not be treated as a diagnosis.
         </p>
       </div>
 
@@ -175,8 +183,7 @@ export const DiseaseDetection = () => {
         <AIStateCard
           state="error"
           title="Inference Service Error"
-          message="Failed to process image through the vision container."
-          onRetry={() => handleImageSelected(imagePreview, 'Tomato')}
+          message={inferenceError || "The sample inference service is unavailable. No diagnosis was generated."}
         />
       )}
 

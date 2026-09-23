@@ -33,8 +33,6 @@ export const BottomNav = ({ currentTab, onSelectTab }) => {
     navItems = [
       { id: 'dashboard', label: t('home'), icon: LayoutDashboard },
       { id: 'transport', label: t('transport'), icon: Truck },
-      { id: 'marketplace', label: t('marketplace'), icon: Store },
-      { id: 'chat', label: t('chat'), icon: MessageSquareText },
     ];
   }
 

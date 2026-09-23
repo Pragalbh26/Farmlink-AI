@@ -18,7 +18,6 @@ export const EligibilityCheck = ({ onBack }) => {
   const [crop, setCrop] = useState('Tomato');
   const [isGovtEmployee, setIsGovtEmployee] = useState(false);
   const [isTaxPayer, setIsTaxPayer] = useState(false);
-  const [hasAadhaarLinkedAccount, setHasAadhaarLinkedAccount] = useState(true);
 
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -34,7 +33,7 @@ export const EligibilityCheck = ({ onBack }) => {
           crop,
           isGovtEmployee,
           isTaxPayer,
-          hasAadhaarLinkedAccount
+
         }
       });
       if (res.success) {
@@ -65,14 +64,14 @@ export const EligibilityCheck = ({ onBack }) => {
 
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <Badge variant="green" size="md">Deterministic Rule Engine</Badge>
-          <span className="text-xs text-slate-500 font-mono">Module: Knowledge 06 §3</span>
+          <Badge variant="amber" size="md">Eligibility preview</Badge>
+          <span className="text-xs text-slate-500 font-mono">Confirm final eligibility with the scheme office</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-          Government Scheme Eligibility Engine
+          Government Scheme Eligibility Preview
         </h1>
         <p className="text-sm text-slate-500">
-          Deterministic evaluation against official eligibility guidelines without LLM speculation.
+          This preview applies basic sample rules only and is not an official eligibility decision.
         </p>
       </div>
 

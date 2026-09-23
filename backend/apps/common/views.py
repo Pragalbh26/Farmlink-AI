@@ -1,8 +1,9 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
+from apps.users.models import User
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -15,7 +16,22 @@ def health_check(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def transport_providers(request):
-    return Response({'success': True, 'data': [
-        {'id': 'local-transport-1', 'name': 'Kisan Freight Services', 'vehicleType': 'Eicher Pro', 'capacity': '5 Ton', 'status': 'available', 'ratePerKm': '₹28/km', 'rating': 4.8, 'experienceYears': 8, 'operationalCorridors': ['Pune', 'Nashik', 'Mumbai']},
-        {'id': 'local-transport-2', 'name': 'Rural Route Logistics', 'vehicleType': 'Bolero Pickup', 'capacity': '1.5 Ton', 'status': 'available', 'ratePerKm': '₹20/km', 'rating': 4.6, 'experienceYears': 5, 'operationalCorridors': ['Pune', 'Satara', 'Kolhapur']},
-    ]})
+    providers = User.objects.filter(
+        role='transporter', transporter_profile__is_available=True,
+    ).exclude(
+        transporter_profile__vehicle_type='Not specified',
+    ).filter(
+        transporter_profile__capacity__gt=0,
+    ).select_related('transporter_profile').order_by('name')
+    data = [{
+        'id': str(user.id),
+        'name': user.name,
+        'vehicleType': user.transporter_profile.vehicle_type,
+        'capacity': f"{user.transporter_profile.capacity} Ton",
+        'status': 'available' if user.transporter_profile.is_available else 'busy',
+        'ratePerKm': 'Contact for quote',
+        'rating': 'New',
+        'experienceYears': '—',
+        'operationalCorridors': [],
+    } for user in providers]
+    return Response({'success': True, 'data': data})

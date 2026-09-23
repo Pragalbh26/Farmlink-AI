@@ -8,17 +8,27 @@ from datetime import datetime
 @permission_classes([IsAuthenticated])
 def price_predict_view(request):
     # Mock response for Member 1's price inference wrapper
-    crop = request.data.get('crop', 'Unknown')
+    crop = request.data.get('commodity') or request.data.get('crop', 'Unknown')
+    horizon = request.data.get('horizon', '7day')
+    current_price = 32.50
+    forecast_price = 34.00 if horizon == '1day' else 35.00
     return Response({
         "success": True,
         "data": {
             "crop": crop,
+            "commodity": crop,
+            "market": request.data.get('market', 'Unspecified market'),
+            "horizon": horizon,
             "forecast_date": datetime.now().isoformat(),
-            "predicted_price": 32.50,
-            "interval_min": 30.00,
-            "interval_max": 35.00
+            "forecastPrice": forecast_price,
+            "currentModal": current_price,
+            "unit": "₹ / Quintal (demo data)",
+            "lowerBound": 30.00,
+            "upperBound": 35.00,
+            "chartData": [],
+            "modelMetadata": {"modelVersion": "demo-baseline", "dataFreshness": "Demonstration response; not live mandi data"}
         },
-        "meta": {"model_version": "mock-v1.0"}
+        "meta": {"model_version": "demo-baseline"}
     }, status=status.HTTP_200_OK)
 
 @api_view(['POST'])

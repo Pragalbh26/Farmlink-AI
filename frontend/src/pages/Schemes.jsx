@@ -48,8 +48,8 @@ export const Schemes = ({ onStartEligibilityCheck }) => {
       <div className="rounded-3xl bg-gradient-to-r from-blue-900 via-slate-900 to-emerald-950 text-white p-6 sm:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Badge variant="blue" size="sm">
-              Official GOI / myScheme Registry
+              <Badge variant="amber" size="sm">
+              Scheme directory preview
             </Badge>
             <span className="text-xs text-blue-300">Deterministic Rule Grounded</span>
           </div>
@@ -57,7 +57,7 @@ export const Schemes = ({ onStartEligibilityCheck }) => {
             {t('schemes')} & Financial Grants
           </h1>
           <p className="text-sm text-slate-300 max-w-xl">
-            Verified central and state government agricultural subsidies, income support, crop insurance, and subsidized credit schemes.
+            Preview records from the configured demo adapter. Confirm current rules, dates, and benefits on the linked official scheme portal.
           </p>
         </div>
 

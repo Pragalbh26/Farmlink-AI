@@ -33,9 +33,14 @@ export const Orders = ({ onNavigate }) => {
     fetchOrders();
   }, []);
 
-  const handleUpdateStatus = (orderId, newStatus) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    addToast(`Order status updated to: ${newStatus.toUpperCase()}`, 'success');
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      await apiClient.request(`/orders/${orderId}`, { method: 'PATCH', body: { status: newStatus } });
+      addToast(`Order status updated to: ${newStatus.toUpperCase()}`, 'success');
+      await fetchOrders();
+    } catch (err) {
+      addToast(err.message || 'Unable to update the order.', 'error');
+    }
   };
 
   const isFarmer = user?.role === 'farmer';
@@ -67,10 +72,9 @@ export const Orders = ({ onNavigate }) => {
       ) : (
         <div className="space-y-4">
           {orders.map((ord) => {
-            const isPending = ord.status === 'pending';
-            const isAccepted = ord.status === 'accepted';
-            const isDispatched = ord.status === 'dispatched';
-            const isDelivered = ord.status === 'delivered';
+            const isPending = ord.status === 'placed';
+            const isAccepted = ord.status === 'confirmed';
+            const isDelivered = ord.status === 'fulfilled';
 
             return (
               <Card key={ord.id} className="space-y-4 border-2 border-slate-200">
@@ -82,7 +86,7 @@ export const Orders = ({ onNavigate }) => {
                         {ord.crop} — {ord.variety}
                       </h3>
                       <Badge
-                        variant={isDelivered ? 'green' : (isDispatched ? 'blue' : (isAccepted ? 'amber' : 'default'))}
+                        variant={isDelivered ? 'green' : (isAccepted ? 'amber' : 'blue')}
                         size="md"
                       >
                         {ord.status.toUpperCase()}
@@ -105,7 +109,7 @@ export const Orders = ({ onNavigate }) => {
                     <p className="font-bold text-slate-400 uppercase text-[10px]">Volume & Rate</p>
                     <p className="font-semibold">{ord.quantity} {ord.unit} @ ₹{ord.unitPrice}/{ord.unit}</p>
                     <p className="text-xs text-slate-500">
-                      {isFarmer ? `Buyer: ${ord.buyerName}` : `Producer: ${ord.farmerName}`}
+                        {isFarmer ? `Buyer: ${ord.buyer_name}` : `Producer: ${ord.farmerName}`}
                     </p>
                   </div>
 
@@ -113,7 +117,7 @@ export const Orders = ({ onNavigate }) => {
                     <p className="font-bold text-slate-400 uppercase text-[10px]">Pickup Origin</p>
                     <p className="font-semibold flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                      <span>{ord.pickupLocation}</span>
+                      <span>{ord.listing_location}</span>
                     </p>
                   </div>
 
@@ -121,7 +125,7 @@ export const Orders = ({ onNavigate }) => {
                     <p className="font-bold text-slate-400 uppercase text-[10px]">Delivery Hub</p>
                     <p className="font-semibold flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                      <span>{ord.deliveryLocation}</span>
+                      <span>Destination is set when transport is requested</span>
                     </p>
                   </div>
                 </div>
@@ -129,14 +133,15 @@ export const Orders = ({ onNavigate }) => {
                 {/* Action Buttons depending on role */}
                 <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <Button
+                    {!ord.transport_status && <Button
                       variant="outline"
                       size="sm"
                       icon={Truck}
                       onClick={() => onNavigate('transport')}
                     >
                       Arrange Transport
-                    </Button>
+                    </Button>}
+                    {ord.transport_status && <span className="text-xs font-semibold text-slate-600">Delivery: {ord.transport_status.replace('_', ' ')}</span>}
                   </div>
 
                   {isFarmer && (
@@ -153,22 +158,12 @@ export const Orders = ({ onNavigate }) => {
                       )}
                       {isAccepted && (
                         <Button
-                          variant="amber"
-                          size="sm"
-                          onClick={() => handleUpdateStatus(ord.id, 'dispatched')}
-                          icon={Truck}
-                        >
-                          Mark Dispatched
-                        </Button>
-                      )}
-                      {isDispatched && (
-                        <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleUpdateStatus(ord.id, 'delivered')}
+                          onClick={() => handleUpdateStatus(ord.id, 'fulfilled')}
                           icon={CheckCircle2}
                         >
-                          Mark Delivered
+                          Mark Fulfilled
                         </Button>
                       )}
                     </div>

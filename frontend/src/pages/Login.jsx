@@ -13,9 +13,8 @@ export const Login = ({ onGoRegister, onLoginSuccess }) => {
   const { t } = useLanguage();
   const { addToast } = useToast();
 
-  const [phone, setPhone] = useState('+91 98765 43210');
-  const [password, setPassword] = useState('password123');
-  const [role, setRole] = useState('farmer');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -32,7 +31,7 @@ export const Login = ({ onGoRegister, onLoginSuccess }) => {
     try {
       const res = await apiClient.request('/auth/login', {
         method: 'POST',
-        body: { phone, password, role }
+        body: { phone, password }
       });
 
       if (res.success) {
@@ -99,25 +98,6 @@ export const Login = ({ onGoRegister, onLoginSuccess }) => {
 
         <Card className="space-y-5">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role Toggle */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-slate-500">Select Role</label>
-              <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold">
-                {['farmer', 'buyer', 'transporter'].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRole(r)}
-                    className={`py-2 rounded-lg capitalize transition cursor-pointer ${
-                      role === r ? 'bg-emerald-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <Input
               label="Phone Number"
               icon={Phone}

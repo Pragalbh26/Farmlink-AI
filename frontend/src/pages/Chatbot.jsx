@@ -15,11 +15,8 @@ export const Chatbot = () => {
     {
       id: 1,
       sender: 'bot',
-      text: 'Namaste! I am your **AgriConnect Grounded Assistant**. Ask me about government scheme eligibility, AGMARKNET mandi trends, ICAR pest/disease management, or input subsidies.',
-      sources: [
-        { title: 'myScheme National Knowledge Portal', url: 'https://myscheme.gov.in', verifiedAt: '2026-08-01' },
-        { title: 'ICAR Agronomic Guidelines', url: 'https://icar.gov.in', verifiedAt: '2026-07-20' }
-      ],
+      text: 'Namaste! This assistant is currently a demonstration. Its replies are fixed examples and are not verified agricultural or scheme advice.',
+      sources: [],
       isAbstention: false,
       time: '09:00 AM'
     }
@@ -27,8 +24,10 @@ export const Chatbot = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
 
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,17 +86,36 @@ export const Chatbot = () => {
   };
 
   const toggleMic = () => {
-    if (!isRecording) {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceError('Voice recognition is not supported in this browser. You can type your question instead.');
+      return;
+    }
+    setVoiceError('');
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => setInput(event.results[0][0].transcript);
+    recognition.onerror = () => setVoiceError('Voice recognition could not complete. Check microphone permission or type your question.');
+    recognition.onend = () => setIsRecording(false);
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
       setIsRecording(true);
-      // Simulate voice input recognition
-      setTimeout(() => {
-        setInput('am i eligible for pm kisan?');
-        setIsRecording(false);
-      }, 1800);
-    } else {
+    } catch {
+      setVoiceError('Voice recognition could not start. Type your question instead.');
       setIsRecording(false);
     }
   };
+
+  useEffect(() => () => recognitionRef.current?.stop(), []);
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto flex flex-col h-[calc(100vh-140px)]">
@@ -109,10 +127,10 @@ export const Chatbot = () => {
               <Bot className="w-6 h-6 text-emerald-700" />
               <span>{t('chat')}</span>
             </h1>
-            <Badge variant="green" size="sm">RAG Grounded</Badge>
+            <Badge variant="amber" size="sm">Demo assistant adapter</Badge>
           </div>
           <p className="text-xs text-slate-500">
-            Answers strictly retrieved from official portals & agronomic publications with zero hallucinated claims.
+            This local backend currently returns a fixed demo response; connect a verified knowledge retrieval service before relying on its advice.
           </p>
         </div>
 
@@ -137,7 +155,7 @@ export const Chatbot = () => {
             <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-800">
               <Bot className="w-4 h-4" />
             </div>
-            <span>Retrieving verified documentation & generating grounded answer...</span>
+            <span>Waiting for the demo assistant…</span>
           </div>
         )}
 
@@ -171,7 +189,7 @@ export const Chatbot = () => {
                 ? 'bg-rose-500 text-white animate-pulse'
                 : 'text-slate-400 hover:text-emerald-700 hover:bg-slate-100'
             }`}
-            title="Simulate Voice Input"
+            title="Use voice input"
           >
             {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </button>
@@ -187,6 +205,7 @@ export const Chatbot = () => {
           Send
         </Button>
       </form>
+      {voiceError && <p role="status" className="text-xs text-amber-800">{voiceError}</p>}
     </div>
   );
 };

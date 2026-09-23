@@ -31,13 +31,13 @@ export const PricePrediction = () => {
 
   const commodities = ['Tomato', 'Onion', 'Potato', 'Wheat'];
 
-  const fetchPrediction = async (commodity, horiz) => {
+  const fetchPrediction = async (commodity, horiz, market) => {
     setLoading(true);
     setAiState('loading');
     try {
       const res = await apiClient.request('/prices/predict', {
         method: 'POST',
-        body: { commodity, horizon: horiz }
+        body: { commodity, horizon: horiz, market }
       });
       if (res.success) {
         setPredictionData(res.data);
@@ -53,8 +53,11 @@ export const PricePrediction = () => {
   useEffect(() => {
     const markets = mockPriceDatasets[selectedCommodity]?.markets || [];
     setSelectedMarket(markets[0] || '');
-    fetchPrediction(selectedCommodity, horizon);
-  }, [selectedCommodity, horizon]);
+  }, [selectedCommodity]);
+
+  useEffect(() => {
+    if (selectedMarket) fetchPrediction(selectedCommodity, horizon, selectedMarket);
+  }, [selectedCommodity, horizon, selectedMarket]);
 
   const activeCropConfig = mockPriceDatasets[selectedCommodity] || mockPriceDatasets['Tomato'];
 
@@ -64,17 +67,17 @@ export const PricePrediction = () => {
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <Badge variant="green" size="md">
-            Mandi Price AI Engine
+            Mandi Price Demonstration
           </Badge>
           <span className="text-xs text-slate-500 font-mono">
             Model: {predictionData?.modelMetadata?.modelVersion || 'v1.4-xgboost-timeseries'}
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-          {t('price_prediction')} & AGMARKNET Forecasting
+            {t('price_prediction')} & Market Forecast Preview
         </h1>
         <p className="text-sm text-slate-500 max-w-2xl">
-          Multi-horizon modal mandi price predictions generated using chronological time-series machine learning over official AGMARKNET daily observations.
+          This local installation returns demonstration values only. Live AGMARKNET prices and a validated forecasting model are not connected.
         </p>
       </div>
 
@@ -163,27 +166,27 @@ export const PricePrediction = () => {
           {/* Price Metrics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card className="p-5 bg-slate-900 text-white space-y-1">
-              <span className="text-xs font-semibold text-slate-400 uppercase">Observed AGMARKNET Modal</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase">Sample Price Level</span>
               <p className="text-3xl font-black">
                 ₹{predictionData.currentModal}
-                <span className="text-xs font-normal text-slate-400"> / Quintal</span>
+                <span className="text-xs font-normal text-slate-400"> / Quintal (demo)</span>
               </p>
               <p className="text-[11px] text-emerald-400 flex items-center gap-1 pt-1">
                 <Clock className="w-3.5 h-3.5" />
-                Latest daily arrival record
+                Demo response, not a live arrival record
               </p>
             </Card>
 
             <Card className="p-5 bg-gradient-to-br from-emerald-50 to-emerald-100/70 border-emerald-300 text-emerald-950 space-y-1">
               <span className="text-xs font-bold text-emerald-800 uppercase">
-                AI {horizon === '1day' ? '1-Day' : '7-Day'} Predicted Modal
+                Demo {horizon === '1day' ? '1-Day' : '7-Day'} Estimate
               </span>
               <p className="text-3xl font-black text-emerald-900">
                 ₹{predictionData.forecastPrice}
                 <span className="text-xs font-normal text-emerald-700"> / Quintal</span>
               </p>
               <p className="text-[11px] text-emerald-800 font-semibold pt-1">
-                95% Confidence Band: ₹{predictionData.lowerBound} – ₹{predictionData.upperBound}
+                Demonstration range: ₹{predictionData.lowerBound} – ₹{predictionData.upperBound}
               </p>
             </Card>
 
@@ -193,16 +196,16 @@ export const PricePrediction = () => {
                 <div className="flex items-center gap-3 pt-1">
                   <div>
                     <p className="text-[10px] text-slate-400 uppercase">MAE Error</p>
-                    <p className="text-sm font-bold text-slate-800">{predictionData.modelMetadata.mae}</p>
+                    <p className="text-sm font-bold text-slate-800">{predictionData.modelMetadata.mae || 'Not measured'}</p>
                   </div>
                   <div className="border-l border-slate-200 pl-3">
                     <p className="text-[10px] text-slate-400 uppercase">RMSE Error</p>
-                    <p className="text-sm font-bold text-slate-800">{predictionData.modelMetadata.rmse}</p>
+                    <p className="text-sm font-bold text-slate-800">{predictionData.modelMetadata.rmse || 'Not measured'}</p>
                   </div>
                 </div>
               </div>
               <p className="text-[11px] text-slate-500 font-medium">
-                Evaluated with temporal cross-validation
+                No validation metrics are available for this demo adapter
               </p>
             </Card>
           </div>
@@ -215,11 +218,11 @@ export const PricePrediction = () => {
                   {t('historical_trend')} ({selectedCommodity} — {selectedMarket})
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Green curve shows recorded AGMARKNET modal rates; Gold dashed curve shows time-series forecast with confidence intervals.
+                  Historical price series are not connected in this demo.
                 </p>
               </div>
               <Badge variant="green" size="sm">
-                Leakage-Free Validation
+                Demo data
               </Badge>
             </div>
 
@@ -238,7 +241,7 @@ export const PricePrediction = () => {
             <div className="flex flex-wrap gap-4 pt-1 text-[11px] text-slate-600 font-medium">
               <span>Data Stream: <strong>{predictionData.modelMetadata.dataFreshness}</strong></span>
               <span>Model Cutoff Date: <strong>{predictionData.modelMetadata.trainingCutoffDate}</strong></span>
-              <span>Algorithm: <strong>Gradient Boosted Lag Regressor (XGBoost)</strong></span>
+              <span>Algorithm: <strong>Demo adapter (no trained model)</strong></span>
             </div>
           </div>
         </div>

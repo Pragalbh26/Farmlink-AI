@@ -18,6 +18,8 @@ export const Register = ({ onGoLogin, onRegisterSuccess }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [state, setState] = useState('Maharashtra');
   const [district, setDistrict] = useState('Pune');
+  const [vehicleType, setVehicleType] = useState('');
+  const [capacity, setCapacity] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,8 +29,8 @@ export const Register = ({ onGoLogin, onRegisterSuccess }) => {
       setError('Please fill in all required fields');
       return;
     }
-    if (password.length < 6 || password !== confirmPassword) {
-      setError(password.length < 6 ? 'Password must be at least 6 characters' : 'Passwords do not match');
+    if (password.length < 8 || password !== confirmPassword) {
+      setError(password.length < 8 ? 'Password must be at least 8 characters' : 'Passwords do not match');
       return;
     }
 
@@ -38,7 +40,7 @@ export const Register = ({ onGoLogin, onRegisterSuccess }) => {
     try {
       const res = await apiClient.request('/auth/register', {
         method: 'POST',
-        body: { role, name, phone, password, state, district }
+        body: { role, name, phone, password, state, district, ...(role === 'transporter' ? { vehicle_type: vehicleType, capacity: Number(capacity) } : {}) }
       });
 
       if (res.success) {
@@ -128,6 +130,13 @@ export const Register = ({ onGoLogin, onRegisterSuccess }) => {
                 required
               />
             </div>
+
+            {role === 'transporter' && (
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Vehicle Type" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} placeholder="e.g. Mini truck" required />
+                <Input label="Capacity (tonnes)" type="number" min="0.01" step="0.01" value={capacity} onChange={(e) => setCapacity(e.target.value)} required />
+              </div>
+            )}
 
             {error && <p className="text-xs font-semibold text-rose-600">{error}</p>}
 

@@ -12,16 +12,18 @@ export const Weather = () => {
 
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const fetchWeather = async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await apiClient.request('/weather/current');
       if (res.success) {
         setWeather(res.data);
       }
     } catch (err) {
-      console.error(err);
+      setError(err.message || 'Unable to load weather information.');
     } finally {
       setLoading(false);
     }
@@ -31,8 +33,11 @@ export const Weather = () => {
     fetchWeather();
   }, []);
 
-  if (loading || !weather) {
-    return <div className="p-12 text-center text-slate-500">Loading agrometeorological advisories...</div>;
+  if (loading) {
+    return <div className="p-12 text-center text-slate-500" role="status">Loading agrometeorological advisories...</div>;
+  }
+  if (error || !weather) {
+    return <div className="p-12 text-center space-y-3"><p role="alert" className="text-rose-700">{error || 'Weather information is unavailable.'}</p><Button variant="outline" onClick={fetchWeather} icon={RefreshCw}>Retry</Button></div>;
   }
 
   return (
@@ -41,7 +46,7 @@ export const Weather = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Badge variant="blue" size="md">IMD Agromet Advisory</Badge>
+            <Badge variant="blue" size="md">Weather demo feed</Badge>
             <span className="text-xs text-slate-500 font-mono">Updated: {weather.verifiedTimestamp}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
@@ -101,6 +106,7 @@ export const Weather = () => {
       {/* 5-Day Agromet Forecast */}
       <div className="space-y-3">
         <h3 className="text-lg font-bold text-slate-900">5-Day District Agrometeorological Forecast</h3>
+        {weather.fiveDayForecast.length === 0 && <p className="text-sm text-slate-500">No extended forecast is available from the configured demo adapter.</p>}
         
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {weather.fiveDayForecast.map((day, idx) => (
@@ -127,7 +133,7 @@ export const Weather = () => {
           <ShieldCheck className="w-4 h-4 text-emerald-700" />
           {weather.source}
         </span>
-        <span className="font-semibold text-slate-500">Agromet Bulletin No. 64/2026</span>
+        <span className="font-semibold text-slate-500">{weather.source?.toLowerCase().includes('demo') ? 'Demo source' : 'Source unavailable'}</span>
       </div>
     </div>
   );
