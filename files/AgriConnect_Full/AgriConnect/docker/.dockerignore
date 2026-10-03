@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+notebooks/
+data/raw/mandi_prices/
+data/raw/disease_images/
+data/processed/
+data/metadata/
+.git/
+.env

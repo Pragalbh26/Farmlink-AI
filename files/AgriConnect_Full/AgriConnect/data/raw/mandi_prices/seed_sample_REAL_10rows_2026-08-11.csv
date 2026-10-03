@@ -1,0 +1,11 @@
+state,district,market,commodity,variety,grade,arrival_date,min_price,max_price,modal_price,source,extracted_at
+Odisha,Mayurbhanja,Baripada APMC,Cucumbar(Kheera),Cucumbar,Medium,11/08/2026,3000,3500,3200,data.gov.in,2026-08-12T00:00:00Z
+Odisha,Mayurbhanja,Baripada APMC,Brinjal,Brinjal,Medium,11/08/2026,4500,6000,5000,data.gov.in,2026-08-12T00:00:00Z
+Andhra Pradesh,Prakasam,Maddipadu APMC,Bengal Gram(Gram)(Whole),Gulabi,FAQ,11/08/2026,5900,5900,5900,data.gov.in,2026-08-12T00:00:00Z
+Tamil Nadu,Thirupur,Tiruppur (South) (Uzhavar Sandhai ),Onion,Bellary,Local,11/08/2026,3000,3500,3250,data.gov.in,2026-08-12T00:00:00Z
+Tamil Nadu,Thirupur,Tiruppur (South) (Uzhavar Sandhai ),Cluster beans,Cluster Beans,Local,11/08/2026,3000,4000,3500,data.gov.in,2026-08-12T00:00:00Z
+Tamil Nadu,Thirupur,Tiruppur (South) (Uzhavar Sandhai ),Bottle gourd,Bottle Gourd,Local,11/08/2026,1500,2000,1750,data.gov.in,2026-08-12T00:00:00Z
+Tamil Nadu,Thirupur,Tiruppur (South) (Uzhavar Sandhai ),Amaranthus,Amaranthus,Local,11/08/2026,2500,3000,2750,data.gov.in,2026-08-12T00:00:00Z
+Tamil Nadu,Thirupur,Tiruppur (South) (Uzhavar Sandhai ),Carrot,Pusakesar,Local,11/08/2026,7000,8000,7500,data.gov.in,2026-08-12T00:00:00Z
+Tamil Nadu,Thirupur,Tiruppur (South) (Uzhavar Sandhai ),Snakeguard,Snakeguard,Local,11/08/2026,3000,4000,3500,data.gov.in,2026-08-12T00:00:00Z
+Tamil Nadu,Thirupur,Tiruppur (South) (Uzhavar Sandhai ),Lemon,Lemon,Local,11/08/2026,7000,8000,7500,data.gov.in,2026-08-12T00:00:00Z

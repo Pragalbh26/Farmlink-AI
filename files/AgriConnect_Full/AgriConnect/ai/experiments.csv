@@ -1,0 +1,4 @@
+experiment_id,system,model,features_config,dataset_version,split_strategy,metric_primary,metric_secondary,result,notes
+PRICE-000,price,naive_baseline,none,none,none,none,none,baseline,"Reference point - not a competing candidate. Placeholder row from Member1_Lead_AI_ML_NLP_Plan.pdf S15 - ILLUSTRATIVE ONLY, delete once first real run lands."
+DISEASE-000,disease,simple_cnn,none,none,none,none,none,baseline,"Small-subset baseline from Week 2. Placeholder row - ILLUSTRATIVE ONLY, delete once first real run lands."
+RAG-000,rag,top_k_similarity,none,none,none,none,none,baseline,"10-15 document prototype from Week 2. Placeholder row - ILLUSTRATIVE ONLY, delete once first real run lands."

@@ -1,0 +1,47 @@
+name: AgriConnect AI - CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/required-now.txt
+          pip install -r requirements/required-later.txt
+
+      - name: Environment sanity check
+        run: python scripts/check_environment.py
+
+      - name: Run test suite
+        run: python -m pytest tests/ -v
+
+      - name: Notebook error scan
+        run: |
+          python -c "
+          import json, glob, sys
+          failed = False
+          for path in sorted(glob.glob('ai/*/notebooks/*.ipynb')):
+              nb = json.load(open(path))
+              errs = [o for c in nb['cells'] if c['cell_type']=='code'
+                      for o in c.get('outputs', []) if o.get('output_type')=='error']
+              status = 'FAIL' if errs else 'OK'
+              print(f'{status}  {path}')
+              if errs:
+                  failed = True
+          sys.exit(1 if failed else 0)
+          "

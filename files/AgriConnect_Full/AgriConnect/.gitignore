@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Env / secrets
+.env
+
+# Data & models (large / regenerable / provenance-tracked separately)
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/mandi_prices/
+!data/raw/disease_images/
+!data/raw/government_schemes/
+data/raw/mandi_prices/*
+!data/raw/mandi_prices/.gitkeep
+!data/raw/mandi_prices/seed_sample_REAL_10rows_2026-08-11.csv
+data/raw/disease_images/*
+!data/raw/disease_images/.gitkeep
+data/raw/government_schemes/*
+!data/raw/government_schemes/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+ai/*/models/*
+!ai/*/models/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large real datasets pulled during batches (regenerable via documented commands, not committed)
+data/raw/disease_images/plantvillage_subset/*
+!data/raw/disease_images/plantvillage_subset/.gitkeep
+data/raw/disease_images/plantvillage_fast_subset/*
+ai/rag/models/scheme_index_v1/*

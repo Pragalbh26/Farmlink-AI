@@ -1,0 +1,6 @@
+# OPTIONAL - only if a REQUIRED-LATER choice hits trouble, or time remains.
+lightgbm>=4.5        # alternative to xgboost (ADR-001 names xgboost first)
+chromadb>=0.5         # alternative to faiss-cpu if metadata filtering becomes essential (ADR-004)
+opencv-python>=4.10   # only if PIL-based preprocessing proves insufficient
+albumentations>=1.4   # richer augmentation, if plain torchvision transforms plateau
+mlflow>=2.15           # explicitly deferred by ADR-006 - do not install unless time remains

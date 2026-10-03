@@ -1,0 +1,21 @@
+# Local dev convenience - real deployment target (Render/Railway/AWS/GCP per
+# Roadmap_of_project.pdf S2) is Member 2's call once the backend needs this.
+services:
+  ai-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    volumes:
+      # mount models so retraining doesn't require a rebuild
+      - ../ai/price_prediction/models:/app/ai/price_prediction/models
+      - ../ai/disease_detection/models:/app/ai/disease_detection/models
+      - ../ai/rag/models:/app/ai/rag/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

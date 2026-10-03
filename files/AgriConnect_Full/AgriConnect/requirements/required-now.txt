@@ -1,0 +1,17 @@
+# REQUIRED NOW - Day 1. Installs fast, no GPU/heavy deps.
+# Minimum versions checked against PyPI on 12 Aug 2026; not hard-pinned yet
+# on purpose - freeze exact versions (pip freeze > requirements/lock.txt)
+# only after the Day-1 environment is confirmed stable (scripts/check_environment.py).
+numpy>=2.1
+pandas>=2.2
+scikit-learn>=1.5
+matplotlib>=3.9
+seaborn>=0.13
+jupyterlab>=4.2
+ipykernel>=6.29
+notebook>=7.2
+requests>=2.32
+python-dotenv>=1.0
+PyYAML>=6.0
+openpyxl>=3.1
+pytest>=8.3

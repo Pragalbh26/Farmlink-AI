@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agriconnect-ai"
+version = "0.1.0"
+description = "AgriConnect AI/ML/NLP workstream - price prediction, disease detection, RAG scheme assistant"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+include = ["ai*", "service*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
