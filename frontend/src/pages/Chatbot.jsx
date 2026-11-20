@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, Mic, MicOff, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react';
+import { Send, Bot, Mic, MicOff, RefreshCw } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
@@ -9,77 +9,87 @@ import { useLanguage } from '../context/LanguageContext';
 import { apiClient } from '../api/client';
 
 export const Chatbot = () => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'bot',
-      text: 'Namaste! This assistant is currently a demonstration. Its replies are fixed examples and are not verified agricultural or scheme advice.',
-      sources: [],
-      isAbstention: false,
-      time: '09:00 AM'
-    }
-  ]);
+  const buildWelcomeMessage = (currentLang) => ({
+    id: 1,
+    sender: 'bot',
+    text:
+      currentLang === 'hi'
+        ? 'नमस्ते! मैं FarmLink AI हूँ। आप मुझसे खेती, मंडी भाव, फसल रोग, सरकारी योजनाओं या किसी भी सामान्य विषय के बारे में बात कर सकते हैं। आज मैं आपकी क्या मदद कर सकता हूँ?'
+        : 'Namaste! I am FarmLink AI. Ask me anything—whether it is Indian farming, mandi prices, crop diseases, government schemes, or any general question. How can I help you today?',
+    sources: [],
+    isAbstention: false,
+    time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+  });
+
+  const [messages, setMessages] = useState(() => [buildWelcomeMessage(lang)]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [voiceError, setVoiceError] = useState('');
-
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
   const handleSend = async (queryText) => {
-    const textToSend = queryText || input;
-    if (!textToSend.trim()) return;
+    const textToSend = (queryText ?? input).trim();
+    if (!textToSend || loading) return;
+
+    const historyPayload = messages
+      .filter((m) => m.id !== 1)
+      .slice(-12)
+      .map((m) => ({ sender: m.sender, text: m.text }));
 
     const userMsg = {
       id: Date.now(),
       sender: 'user',
       text: textToSend,
-      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
     try {
-      const res = await apiClient.request('/chat', {
+      const res = await apiClient.request('/chat/', {
         method: 'POST',
-        body: { message: textToSend }
+        body: {
+          message: textToSend,
+          history: historyPayload,
+          lang,
+        },
       });
 
-      if (res.success) {
-        const botMsg = {
-          id: Date.now() + 1,
-          sender: 'bot',
-          text: res.data.answer,
-          sources: res.data.sources,
-          isAbstention: res.data.isAbstention,
-          routeIntent: res.data.routeIntent,
-          time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prev => [...prev, botMsg]);
-      }
-    } catch (err) {
-      const errorMsg = {
+      const botMsg = {
         id: Date.now() + 1,
         sender: 'bot',
-        text: 'Sorry, I am temporarily unable to retrieve authoritative evidence from the knowledge base. Please retry shortly.',
-        sources: [],
-        isAbstention: true,
-        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+        text: res.response || res.data?.response || res.data?.answer || 'No response received.',
+        sources: res.sources || res.data?.sources || [],
+        isAbstention: false,
+        routeIntent: res.model_version || res.data?.model_version || 'gemini',
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages((prev) => [...prev, botMsg]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text:
+            lang === 'hi'
+              ? 'क्षमा करें, अभी FarmLink AI सर्वर से संपर्क नहीं हो पा रहा है। कृपया जांचें कि Django सर्वर चल रहा है।'
+              : 'Sorry, I am temporarily unable to reach the FarmLink AI backend. Please verify that the Django server is running.',
+          sources: [],
+          isAbstention: false,
+          time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -91,35 +101,28 @@ export const Chatbot = () => {
       setIsRecording(false);
       return;
     }
-
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setVoiceError('Voice recognition is not supported in this browser. You can type your question instead.');
+      setVoiceError('Voice recognition is not supported in this browser.');
       return;
     }
     setVoiceError('');
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN';
+    recognition.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => setInput(event.results[0][0].transcript);
-    recognition.onerror = () => setVoiceError('Voice recognition could not complete. Check microphone permission or type your question.');
+    recognition.onerror = () => setVoiceError('Voice recognition failed. Check microphone permissions.');
     recognition.onend = () => setIsRecording(false);
     recognitionRef.current = recognition;
-    try {
-      recognition.start();
-      setIsRecording(true);
-    } catch {
-      setVoiceError('Voice recognition could not start. Type your question instead.');
-      setIsRecording(false);
-    }
+    recognition.start();
+    setIsRecording(true);
   };
 
   useEffect(() => () => recognitionRef.current?.stop(), []);
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto flex flex-col h-[calc(100vh-140px)]">
-      {/* Chat Header */}
       <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
@@ -127,45 +130,36 @@ export const Chatbot = () => {
               <Bot className="w-6 h-6 text-emerald-700" />
               <span>{t('chat')}</span>
             </h1>
-            <Badge variant="amber" size="sm">Demo assistant adapter</Badge>
+            <Badge variant="green" size="sm">Live Connected</Badge>
           </div>
           <p className="text-xs text-slate-500">
-            This local backend currently returns a fixed demo response; connect a verified knowledge retrieval service before relying on its advice.
+            Powered by Google Gemini — Ask any farming or general question with full conversation memory.
           </p>
         </div>
-
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setMessages([messages[0]])}
+          onClick={() => setMessages([buildWelcomeMessage(lang)])}
           icon={RefreshCw}
         >
           Clear Thread
         </Button>
       </div>
 
-      {/* Chat Messages Log Area */}
       <Card padding="p-4 sm:p-6" className="flex-1 overflow-y-auto space-y-4 bg-slate-50/50">
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} />
         ))}
-
         {loading && (
-          <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-200 text-xs text-slate-500 animate-pulse">
-            <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-800">
-              <Bot className="w-4 h-4" />
-            </div>
-            <span>Waiting for the demo assistant…</span>
+          <div className="text-xs text-slate-500 italic px-2">
+            {lang === 'hi' ? 'FarmLink AI उत्तर तैयार कर रहा है...' : 'FarmLink AI is thinking...'}
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </Card>
 
-      {/* Suggestion Chips */}
       <SuggestionChips onSelectPrompt={(q) => handleSend(q)} />
 
-      {/* Input Box & Voice Button */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -178,23 +172,22 @@ export const Chatbot = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything (e.g., 'PM-KISAN eligibility rules', 'Tomato price outlook')..."
-            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3.5 pr-12 text-slate-900 text-sm sm:text-base min-h-[48px] focus:border-emerald-600 focus:outline-none shadow-xs"
+            placeholder="Ask anything (e.g., 'PM-KISAN rules', 'Tomato prices', or any general question)..."
+            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3.5 pr-12 text-slate-900 min-h-[48px] focus:border-emerald-600 focus:outline-none"
           />
           <button
             type="button"
             onClick={toggleMic}
-            className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-xl transition cursor-pointer ${
-              isRecording
-                ? 'bg-rose-500 text-white animate-pulse'
-                : 'text-slate-400 hover:text-emerald-700 hover:bg-slate-100'
-            }`}
-            title="Use voice input"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-xl hover:bg-slate-100 cursor-pointer"
+            title="Voice Input"
           >
-            {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {isRecording ? (
+              <MicOff className="w-4 h-4 text-rose-600" />
+            ) : (
+              <Mic className="w-4 h-4 text-slate-500" />
+            )}
           </button>
         </div>
-
         <Button
           type="submit"
           variant="primary"
@@ -205,7 +198,7 @@ export const Chatbot = () => {
           Send
         </Button>
       </form>
-      {voiceError && <p role="status" className="text-xs text-amber-800">{voiceError}</p>}
+      {voiceError && <p className="text-xs text-amber-800">{voiceError}</p>}
     </div>
   );
 };

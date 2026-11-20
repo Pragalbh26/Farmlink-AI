@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { PlusCircle, ArrowLeft, CheckCircle2, TrendingUp, Sparkles, MapPin } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ArrowLeft, CheckCircle2, Search } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
@@ -8,46 +8,65 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { apiClient } from '../api/client';
+import { INDIAN_CROPS, INDIAN_MANDIS_BY_STATE } from '../data/indianAgriCatalog';
 
 export const CreateListing = ({ onBack, onSuccess }) => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { addToast } = useToast();
 
-  const [crop, setCrop] = useState('Tomato');
-  const [variety, setVariety] = useState('Abhinav Hybrid');
+  const allStates = useMemo(() => Object.keys(INDIAN_MANDIS_BY_STATE).sort(), []);
+  const initialState = INDIAN_MANDIS_BY_STATE[user?.state] ? user.state : 'Andhra Pradesh';
+
+  const [cropSearch, setCropSearch] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState('Tomato');
+  const [customCropName, setCustomCropName] = useState('');
+  const [variety, setVariety] = useState(INDIAN_CROPS[0].defaultVar);
   const [quantity, setQuantity] = useState(50);
   const [unit, setUnit] = useState('Quintal');
-  const [expectedPrice, setExpectedPrice] = useState(1800);
-  const [state, setState] = useState(user?.state || 'Maharashtra');
-  const [district, setDistrict] = useState(user?.district || 'Pune');
-  const [market, setMarket] = useState('Pune APMC');
+  const [expectedPrice, setExpectedPrice] = useState(INDIAN_CROPS[0].defaultPrice);
+  const [state, setState] = useState(initialState);
+  const [district, setDistrict] = useState(user?.district || '');
+  const [market, setMarket] = useState(INDIAN_MANDIS_BY_STATE[initialState][0]);
+  const [customMarket, setCustomMarket] = useState('');
   const [harvestDate, setHarvestDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('Freshly harvested Grade-A produce, cleaned, sorted, ready for immediate dispatch.');
-  const [image, setImage] = useState('https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80');
+  const [image, setImage] = useState(INDIAN_CROPS[0].sampleImg);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const crops = [
-    { name: 'Tomato', defaultVar: 'Abhinav Hybrid', defaultPrice: 1800, modalRef: 1780, sampleImg: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80' },
-    { name: 'Onion', defaultVar: 'Nashik Red', defaultPrice: 1600, modalRef: 1580, sampleImg: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=800&auto=format&fit=crop&q=80' },
-    { name: 'Potato', defaultVar: 'Kufri Jyoti', defaultPrice: 1350, modalRef: 1320, sampleImg: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=800&auto=format&fit=crop&q=80' },
-    { name: 'Wheat', defaultVar: 'Sharbati HD-2967', defaultPrice: 2400, modalRef: 2380, sampleImg: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80' },
-    { name: 'Rice', defaultVar: 'BPT 5204 Samba', defaultPrice: 3200, modalRef: 3100, sampleImg: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop&q=80' },
-  ];
+  const filteredCrops = useMemo(() => {
+    const q = cropSearch.trim().toLowerCase();
+    if (!q) return INDIAN_CROPS;
+    return INDIAN_CROPS.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
+    );
+  }, [cropSearch]);
 
   const handleCropChange = (cName) => {
-    const matched = crops.find(c => c.name === cName);
+    setSelectedPreset(cName);
+    const matched = INDIAN_CROPS.find((c) => c.name === cName);
     if (matched) {
-      setCrop(matched.name);
       setVariety(matched.defaultVar);
       setExpectedPrice(matched.defaultPrice);
       setImage(matched.sampleImg);
     }
   };
 
+  const handleStateChange = (newState) => {
+    setState(newState);
+    const list = INDIAN_MANDIS_BY_STATE[newState] || [];
+    setMarket(list[0] || '__CUSTOM__');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const finalCrop = selectedPreset === '__CUSTOM__' ? customCropName.trim() : selectedPreset;
+    const finalMarket = market === '__CUSTOM__' ? customMarket.trim() : market;
+    if (!finalCrop) {
+      setError('Please enter a crop name');
+      return;
+    }
     if (!quantity || !expectedPrice) {
       setError('Please fill in quantity and expected price');
       return;
@@ -55,22 +74,21 @@ export const CreateListing = ({ onBack, onSuccess }) => {
 
     setLoading(true);
     setError('');
-
     try {
+      const locationParts = [district.trim(), state, finalMarket].filter(Boolean);
       const res = await apiClient.request('/listings/', {
         method: 'POST',
         body: {
-          crop,
+          crop: finalCrop,
           variety,
           quantity: Number(quantity),
           unit,
           expected_price: Number(expectedPrice),
-          location: `${district}, ${state}${market ? ` - ${market}` : ''}`,
-          image_url: image || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80',
-        }
+          location: locationParts.join(', '),
+          image_url: image || '/crop-placeholder.svg',
+        },
       });
-
-      if (res.success) {
+      if (res.success !== false) {
         addToast('Crop listing posted to marketplace successfully!', 'success');
         if (onSuccess) onSuccess();
       }
@@ -80,6 +98,9 @@ export const CreateListing = ({ onBack, onSuccess }) => {
       setLoading(false);
     }
   };
+
+  const currentPreset = INDIAN_CROPS.find((c) => c.name === selectedPreset);
+  const stateMandis = INDIAN_MANDIS_BY_STATE[state] || [];
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -96,37 +117,48 @@ export const CreateListing = ({ onBack, onSuccess }) => {
           {t('list_harvest_cta')}
         </h1>
         <p className="text-sm text-slate-500">
-          Offer your harvest directly to registered buyers with verified mandi price reference
+          Offer any Indian crop directly to registered buyers with APMC mandi price benchmarks
         </p>
       </div>
 
       <Card className="space-y-6 p-6 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Crop Selector Buttons */}
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Select Crop Type</label>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {crops.map((c) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => handleCropChange(c.name)}
-                  className={`p-3 rounded-xl border flex flex-col items-center gap-1 text-xs font-bold transition cursor-pointer ${
-                    crop === c.name
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-900 shadow-xs'
-                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  <span className="text-lg">
-                    {c.name === 'Tomato' ? '🍅' : c.name === 'Onion' ? '🧅' : c.name === 'Potato' ? '🥔' : c.name === 'Wheat' ? '🌾' : '🍚'}
-                  </span>
-                  <span>{c.name}</span>
-                </button>
-              ))}
+            <label className="text-sm font-bold text-slate-700">Select Crop Type (65+ Indian Crops or Custom)</label>
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={cropSearch}
+                onChange={(e) => setCropSearch(e.target.value)}
+                placeholder="Search crop by name or category (e.g., Mango, Wheat, Chili, Turmeric)..."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-800 focus:border-emerald-600 focus:outline-none"
+              />
             </div>
+            <select
+              value={selectedPreset}
+              onChange={(e) => handleCropChange(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 min-h-[48px] text-base font-semibold focus:border-emerald-600 focus:outline-none"
+            >
+              {filteredCrops.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name} — {c.category}
+                </option>
+              ))}
+              <option value="__CUSTOM__">+ Other / Custom Crop</option>
+            </select>
           </div>
 
-          {/* Photo Upload Component */}
+          {selectedPreset === '__CUSTOM__' && (
+            <Input
+              label="Custom Crop Name"
+              value={customCropName}
+              onChange={(e) => setCustomCropName(e.target.value)}
+              placeholder="Enter any crop name (e.g., Dragon Fruit, Saffron, Millets)"
+              required
+            />
+          )}
+
           <ImageUpload
             label="Harvest Photo"
             helperText="Clear photo of the harvested lot or crop field"
@@ -140,7 +172,7 @@ export const CreateListing = ({ onBack, onSuccess }) => {
               value={variety}
               onChange={(e) => setVariety(e.target.value)}
               required
-              placeholder="e.g. Abhinav Hybrid Grade-A"
+              placeholder="e.g. Grade-A Hybrid"
             />
             <div className="grid grid-cols-2 gap-2">
               <Input
@@ -166,46 +198,71 @@ export const CreateListing = ({ onBack, onSuccess }) => {
             </div>
           </div>
 
-          {/* Expected Price & Mandi Helper */}
           <div className="space-y-2">
             <Input
               label={`Expected Selling Price (₹ per ${unit})`}
               type="number"
-              min="100"
+              min="1"
               value={expectedPrice}
               onChange={(e) => setExpectedPrice(e.target.value)}
               required
             />
-            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs flex items-center justify-between">
-              <span className="text-emerald-800 font-medium">
-                Current {district} APMC Modal Benchmark:
-              </span>
-              <span className="font-extrabold text-emerald-950">
-                ₹{crops.find(c => c.name === crop)?.modalRef || 1780} / {unit}
-              </span>
-            </div>
+            {currentPreset?.defaultPrice && (
+              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs flex items-center justify-between">
+                <span className="text-emerald-800 font-medium">
+                  Reference APMC Benchmark ({currentPreset.name}):
+                </span>
+                <span className="font-extrabold text-emerald-950">
+                  ₹{currentPreset.defaultPrice.toLocaleString('en-IN')} / Quintal
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">State / UT</label>
+              <select
+                value={state}
+                onChange={(e) => handleStateChange(e.target.value)}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 min-h-[48px] text-sm font-semibold focus:border-emerald-600 focus:outline-none"
+              >
+                {allStates.map((st) => (
+                  <option key={st} value={st}>{st}</option>
+                ))}
+              </select>
+            </div>
             <Input
-              label="State"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-              required
-            />
-            <Input
-              label="District"
+              label="District / Village"
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
+              placeholder="e.g. Guntur"
               required
             />
-            <Input
-              label="Nearest Mandi"
-              value={market}
-              onChange={(e) => setMarket(e.target.value)}
-              required
-            />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-700">Nearest Mandi</label>
+              <select
+                value={market}
+                onChange={(e) => setMarket(e.target.value)}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 min-h-[48px] text-sm font-semibold focus:border-emerald-600 focus:outline-none"
+              >
+                {stateMandis.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+                <option value="__CUSTOM__">+ Other Local Mandi</option>
+              </select>
+            </div>
           </div>
+
+          {market === '__CUSTOM__' && (
+            <Input
+              label="Custom Mandi Name"
+              value={customMarket}
+              onChange={(e) => setCustomMarket(e.target.value)}
+              placeholder="Enter nearest APMC / local market name"
+              required
+            />
+          )}
 
           <Input
             label="Harvest Date"

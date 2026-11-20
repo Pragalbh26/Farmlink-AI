@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Clock, CheckCircle2, Truck, MapPin, User, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Package, CheckCircle2, Truck, Store, RefreshCw } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
@@ -12,18 +12,21 @@ export const Orders = ({ onNavigate }) => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { addToast } = useToast();
-
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
+  const [error, setError] = useState('');
 
   const fetchOrders = async () => {
+    setLoading(true);
+    setError('');
     try {
       const res = await apiClient.request('/orders/me');
-      if (res.success) {
+      if (res.success && Array.isArray(res.data)) {
         setOrders(res.data);
       }
     } catch (err) {
-      console.error(err);
+      setError(err.message || 'Unable to load orders.');
     } finally {
       setLoading(false);
     }
@@ -33,141 +36,156 @@ export const Orders = ({ onNavigate }) => {
     fetchOrders();
   }, []);
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
+  const handleStatusUpdate = async (orderId, nextStatus) => {
+    setUpdatingId(orderId);
     try {
-      await apiClient.request(`/orders/${orderId}`, { method: 'PATCH', body: { status: newStatus } });
-      addToast(`Order status updated to: ${newStatus.toUpperCase()}`, 'success');
-      await fetchOrders();
+      await apiClient.request(`/orders/${orderId}`, {
+        method: 'PATCH',
+        body: { status: nextStatus },
+      });
+      addToast(`Order marked as ${nextStatus}!`, 'success');
+      fetchOrders();
     } catch (err) {
-      addToast(err.message || 'Unable to update the order.', 'error');
+      addToast(err.message || 'Unable to update order status.', 'error');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const isFarmer = user?.role === 'farmer';
+  const getStatusVariant = (status) => {
+    const s = String(status || '').toLowerCase();
+    if (s === 'fulfilled' || s === 'completed' || s === 'confirmed') return 'green';
+    if (s === 'cancelled') return 'red';
+    return 'amber';
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{t('orders')}</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            {t('orders')}
+          </h1>
           <p className="text-sm text-slate-500">
-            {isFarmer ? 'Incoming buyer orders on your harvest lots' : 'Purchase orders placed with farm producers'}
+            Track purchase orders from confirmation to farm-gate delivery
           </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchOrders} loading={loading} icon={RefreshCw}>
+            Refresh
+          </Button>
+          {onNavigate && (
+            <Button variant="primary" size="sm" onClick={() => onNavigate('transport')} icon={Truck}>
+              Book Transport
+            </Button>
+          )}
         </div>
       </div>
 
-      {orders.length === 0 ? (
-        <Card className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-slate-50 border-dashed">
-          <Package className="w-10 h-10 text-slate-300" />
-          <h3 className="font-bold text-base text-slate-700">No active orders found</h3>
-          <p className="text-xs text-slate-500 max-w-sm">
-            {isFarmer ? 'Buyer orders for your listed harvests will appear here.' : 'Browse the marketplace and place purchase orders directly with farmers.'}
+      {error && (
+        <p role="alert" className="text-sm font-semibold text-rose-600">
+          {error}
+        </p>
+      )}
+
+      {loading ? (
+        <Card className="p-8 text-center text-sm text-slate-500">
+          Loading orders...
+        </Card>
+      ) : orders.length === 0 ? (
+        <Card className="p-10 text-center space-y-3 bg-slate-50 border-dashed">
+          <Package className="w-10 h-10 text-slate-400 mx-auto" />
+          <h3 className="font-bold text-slate-800">No orders yet</h3>
+          <p className="text-sm text-slate-500 max-w-md mx-auto">
+            {user?.role === 'buyer'
+              ? 'Browse the Marketplace to place your first direct farm purchase order.'
+              : 'Incoming buyer orders for your harvest listings will appear here.'}
           </p>
-          {!isFarmer && (
-            <Button variant="primary" size="sm" onClick={() => onNavigate('marketplace')}>
-              Browse Marketplace
+          {onNavigate && (
+            <Button variant="primary" size="md" onClick={() => onNavigate('marketplace')} icon={Store}>
+              Go to Marketplace
             </Button>
           )}
         </Card>
       ) : (
         <div className="space-y-4">
           {orders.map((ord) => {
-            const isPending = ord.status === 'placed';
-            const isAccepted = ord.status === 'confirmed';
-            const isDelivered = ord.status === 'fulfilled';
+            const qty = Number(ord.quantity ?? 0) || 0;
+            const unitPrice = Number(ord.unitPrice ?? ord.agreed_price ?? 0) || 0;
+            const total = Number(ord.totalAmount ?? ord.total_amount ?? qty * unitPrice) || 0;
+            const status = String(ord.status || 'placed').toLowerCase();
+            const crop = ord.crop || ord.listing_crop || 'Crop';
+            const variety = ord.variety || ord.listing_variety || '';
+            const unit = ord.unit || 'Quintal';
 
             return (
-              <Card key={ord.id} className="space-y-4 border-2 border-slate-200">
-                {/* Order Top Line */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-lg text-slate-900">
-                        {ord.crop} — {ord.variety}
+              <Card key={ord.id} className="p-5 space-y-4 border border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-extrabold text-lg text-slate-900">
+                        {crop} {variety ? `(${variety})` : ''}
                       </h3>
-                      <Badge
-                        variant={isDelivered ? 'green' : (isAccepted ? 'amber' : 'blue')}
-                        size="md"
-                      >
-                        {ord.status.toUpperCase()}
+                      <Badge variant={getStatusVariant(status)} size="sm">
+                        {status.toUpperCase()}
                       </Badge>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">Order ID: {ord.id} • {ord.createdAt}</p>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-xs text-slate-500">Total Order Amount</p>
-                    <p className="text-xl font-black text-emerald-800">
-                      ₹{ord.totalAmount.toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Logistics & Location Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm text-slate-700">
-                  <div className="space-y-1">
-                    <p className="font-bold text-slate-400 uppercase text-[10px]">Volume & Rate</p>
-                    <p className="font-semibold">{ord.quantity} {ord.unit} @ ₹{ord.unitPrice}/{ord.unit}</p>
                     <p className="text-xs text-slate-500">
-                        {isFarmer ? `Buyer: ${ord.buyer_name}` : `Producer: ${ord.farmerName}`}
+                      Order #{String(ord.id || '').slice(0, 8)} · Qty: {qty} {unit} · Rate: ₹{unitPrice.toLocaleString('en-IN')}/{unit}
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      {user?.role === 'farmer'
+                        ? `Buyer: ${ord.buyerName || ord.buyer_name || 'Registered Buyer'}`
+                        : `Farmer: ${ord.farmerName || ord.farmer_name || 'Registered Farmer'}`}
                     </p>
                   </div>
 
-                  <div className="space-y-1">
-                    <p className="font-bold text-slate-400 uppercase text-[10px]">Pickup Origin</p>
-                    <p className="font-semibold flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                      <span>{ord.listing_location}</span>
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="font-bold text-slate-400 uppercase text-[10px]">Delivery Hub</p>
-                    <p className="font-semibold flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                      <span>Destination is set when transport is requested</span>
+                  <div className="text-left sm:text-right space-y-1">
+                    <p className="text-xs text-slate-400 uppercase font-bold">Total Amount</p>
+                    <p className="text-2xl font-black text-emerald-800">
+                      ₹{total.toLocaleString('en-IN')}
                     </p>
                   </div>
                 </div>
 
-                {/* Action Buttons depending on role */}
                 <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    {!ord.transport_status && <Button
-                      variant="outline"
-                      size="sm"
-                      icon={Truck}
-                      onClick={() => onNavigate('transport')}
-                    >
-                      Arrange Transport
-                    </Button>}
-                    {ord.transport_status && <span className="text-xs font-semibold text-slate-600">Delivery: {ord.transport_status.replace('_', ' ')}</span>}
+                  <span className="text-xs text-slate-400">
+                    {ord.createdAt || ord.created_at || ''}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {user?.role === 'farmer' && status === 'placed' && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        loading={updatingId === ord.id}
+                        onClick={() => handleStatusUpdate(ord.id, 'confirmed')}
+                        icon={CheckCircle2}
+                      >
+                        Confirm Order
+                      </Button>
+                    )}
+                    {user?.role === 'farmer' && status === 'confirmed' && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        loading={updatingId === ord.id}
+                        onClick={() => handleStatusUpdate(ord.id, 'fulfilled')}
+                        icon={CheckCircle2}
+                      >
+                        Mark Fulfilled
+                      </Button>
+                    )}
+                    {['placed', 'confirmed'].includes(status) && onNavigate && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onNavigate('transport')}
+                        icon={Truck}
+                      >
+                        Book Transport
+                      </Button>
+                    )}
                   </div>
-
-                  {isFarmer && (
-                    <div className="flex gap-2">
-                      {isPending && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleUpdateStatus(ord.id, 'accepted')}
-                          icon={CheckCircle2}
-                        >
-                          Accept Order
-                        </Button>
-                      )}
-                      {isAccepted && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleUpdateStatus(ord.id, 'fulfilled')}
-                          icon={CheckCircle2}
-                        >
-                          Mark Fulfilled
-                        </Button>
-                      )}
-                    </div>
-                  )}
                 </div>
               </Card>
             );

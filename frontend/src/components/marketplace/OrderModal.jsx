@@ -1,137 +1,137 @@
-import React, { useState } from 'react';
-import { ShoppingCart, AlertCircle, CheckCircle2, ShieldCheck, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, CheckCircle2 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
-import { useLanguage } from '../../context/LanguageContext';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { apiClient } from '../../api/client';
 
 export const OrderModal = ({ isOpen, onClose, listing, onOrderSuccess }) => {
-  const { user } = useAuth();
-  const { t } = useLanguage();
   const { addToast } = useToast();
-
-  const [quantity, setQuantity] = useState(10);
-  const [deliveryLocation, setDeliveryLocation] = useState(user?.district ? `${user.district} Wholesale Market` : 'Vashi Terminal, Mumbai');
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!listing) return null;
+  const availableQty = Number(listing?.quantity ?? 0) || 0;
+  const unitPrice = Number(listing?.expectedPrice ?? listing?.expected_price ?? 0) || 0;
+  const unitLabel = listing?.unit || 'Quintal';
+  const cropName = listing?.crop || 'Crop';
+  const varietyName = listing?.variety || '';
+  const farmerName = listing?.farmerName || listing?.farmer_name || 'Registered Farmer';
 
-  const unitPrice = listing.expectedPrice;
-  const totalAmount = (Number(quantity) || 0) * unitPrice;
+  useEffect(() => {
+    if (isOpen && listing) {
+      setQuantity(availableQty > 0 ? Math.min(10, availableQty) : 1);
+      setError('');
+    }
+  }, [isOpen, listing, availableQty]);
+
+  if (!isOpen || !listing) return null;
+
+  const numericQty = Number(quantity) || 0;
+  const totalAmount = numericQty * unitPrice;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const qty = Number(quantity);
-
-    if (qty <= 0) {
-      setError('Please enter a valid quantity greater than 0');
+    if (numericQty <= 0) {
+      setError('Quantity must be greater than 0.');
       return;
     }
-    if (qty > listing.quantity) {
-      setError(`Requested quantity (${qty} ${listing.unit}) exceeds available stock (${listing.quantity} ${listing.unit})`);
+    if (availableQty > 0 && numericQty > availableQty) {
+      setError(`Only ${availableQty} ${unitLabel} available in this lot.`);
       return;
     }
 
     setLoading(true);
     setError('');
-
     try {
       const res = await apiClient.request('/orders/', {
         method: 'POST',
         body: {
           listing: listing.id,
-          quantity: qty,
+          quantity: numericQty,
           agreed_price: unitPrice,
-        }
+        },
       });
-
-      if (res.success) {
-        addToast(t('order_success'), 'success');
+      if (res.success !== false) {
+        addToast(`Order placed for ${numericQty} ${unitLabel} of ${cropName}!`, 'success');
         if (onOrderSuccess) onOrderSuccess(res.data);
-        onClose();
+        if (onClose) onClose();
       }
     } catch (err) {
-      setError(err.message || 'Failed to place order');
+      setError(err.message || 'Failed to place order. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Purchase Order — ${listing.crop}`}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Place Purchase Order — ${cropName}`}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Listing Summary Card */}
-        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-          <img src={listing.image || '/crop-placeholder.svg'} alt={listing.crop} className="w-16 h-16 rounded-xl object-cover shrink-0" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/crop-placeholder.svg'; }} />
-          <div className="min-w-0">
-            <p className="font-bold text-slate-900">{listing.crop} ({listing.variety})</p>
-            <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-700" />
-              <span>{listing.district}, {listing.state}</span>
-            </p>
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-900">
+              {cropName} {varietyName ? `(${varietyName})` : ''}
+            </span>
+            <span className="font-extrabold text-emerald-700">
+              ₹{unitPrice.toLocaleString('en-IN')} / {unitLabel}
+            </span>
           </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-500">Unit Price</p>
-            <p className="text-sm font-extrabold text-emerald-800">₹{unitPrice} / {listing.unit}</p>
-          </div>
+          <p className="text-xs text-slate-500">
+            Farmer: {farmerName} · Available: {availableQty} {unitLabel}
+          </p>
         </div>
 
-        {/* Quantity Field */}
         <Input
-          label={`Purchase Quantity (${listing.unit})`}
+          label={`Order Quantity (${unitLabel})`}
           type="number"
           min="1"
-          max={listing.quantity}
+          max={availableQty > 0 ? availableQty : undefined}
+          step="1"
           value={quantity}
-          onChange={(e) => {
-            setQuantity(e.target.value);
-            setError('');
-          }}
+          onChange={(e) => setQuantity(e.target.value)}
           required
-          helperText={`Available inventory: ${listing.quantity} ${listing.unit}`}
-          error={error}
         />
 
-        {/* Delivery Location */}
-        <Input
-          label="Destination / Drop-off Hub"
-          value={deliveryLocation}
-          onChange={(e) => setDeliveryLocation(e.target.value)}
-          required
-          placeholder="e.g. APMC Yard, City"
-        />
-
-        {/* Financial Summary */}
-        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 space-y-2">
-          <div className="flex justify-between text-xs text-emerald-900">
-            <span>Rate</span>
-            <span>₹{unitPrice} × {quantity || 0} {listing.unit}</span>
-          </div>
-          <div className="flex justify-between text-base font-extrabold text-emerald-950 pt-2 border-t border-emerald-200">
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-emerald-900 text-sm font-semibold">
+            <ShoppingBag className="w-4 h-4 text-emerald-700" />
             <span>Total Payable Amount</span>
-            <span>₹{totalAmount.toLocaleString('en-IN')}</span>
           </div>
+          <span className="text-xl font-black text-emerald-900">
+            ₹{totalAmount.toLocaleString('en-IN')}
+          </span>
         </div>
 
-        {/* Safety Note */}
-        <div className="flex items-start gap-2 text-[11px] text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-          <span>Direct farmer transaction contract. Payment settled upon verified warehouse gate receipt.</span>
-        </div>
+        {error && (
+          <p role="alert" className="text-xs font-semibold text-rose-600">
+            {error}
+          </p>
+        )}
 
-        {/* Action Buttons */}
-        <div className="pt-3 flex gap-3">
-          <Button variant="outline" size="md" onClick={onClose} fullWidth>
-            {t('cancel')}
+        <div className="pt-2 flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={onClose}
+            fullWidth
+          >
+            Cancel
           </Button>
-          <Button variant="primary" size="md" type="submit" loading={loading} fullWidth icon={ShoppingCart}>
-            Confirm & Send Order
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            loading={loading}
+            fullWidth
+            icon={CheckCircle2}
+          >
+            Confirm Order
           </Button>
         </div>
       </form>

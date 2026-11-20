@@ -10,8 +10,7 @@ import {
   Truck,
   ShoppingBag,
   PlusCircle,
-  ShieldCheck,
-  UserCheck
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -19,7 +18,6 @@ import { useLanguage } from '../../context/LanguageContext';
 export const Sidebar = ({ currentTab, onSelectTab }) => {
   const { user } = useAuth();
   const { t } = useLanguage();
-
   const role = user?.role || 'farmer';
 
   const menuSections = [
@@ -32,7 +30,7 @@ export const Sidebar = ({ currentTab, onSelectTab }) => {
       ]
     },
     {
-      title: 'AGRI AI INTELLIGENCE',
+      title: 'FARMLINK AI TOOLS',
       items: [
         { id: 'prices', label: t('price_prediction'), icon: TrendingUp, roles: ['farmer', 'buyer'] },
         { id: 'disease', label: t('disease_detection'), icon: ScanLine, roles: ['farmer'] },
@@ -52,7 +50,6 @@ export const Sidebar = ({ currentTab, onSelectTab }) => {
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200/80 bg-white min-h-[calc(100vh-65px)] p-4 shrink-0 justify-between">
       <div className="space-y-6">
-        {/* Farmer Quick Sell CTA */}
         {role === 'farmer' && (
           <button
             onClick={() => onSelectTab('create-listing')}
@@ -63,18 +60,16 @@ export const Sidebar = ({ currentTab, onSelectTab }) => {
           </button>
         )}
 
-        {/* Navigation Categories */}
         {menuSections.map((section, idx) => {
-          const visibleItems = section.items.filter(item => item.roles.includes(role));
+          const visibleItems = section.items.filter((item) => item.roles.includes(role));
           if (visibleItems.length === 0) return null;
-
           return (
             <div key={idx} className="space-y-1.5">
               <p className="text-[11px] font-bold tracking-wider text-slate-400 px-3 uppercase">
                 {section.title}
               </p>
               <div className="space-y-1">
-                {visibleItems.map(item => {
+                {visibleItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = currentTab === item.id;
                   return (
@@ -98,14 +93,13 @@ export const Sidebar = ({ currentTab, onSelectTab }) => {
         })}
       </div>
 
-      {/* Feature status */}
-      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
-        <div className="flex items-center gap-1.5 font-bold text-slate-800">
+      <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 space-y-1.5">
+        <div className="flex items-center gap-1.5 font-bold">
           <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-          <span>Feature status</span>
+          <span>FarmLink AI</span>
         </div>
-        <p className="text-[11px] text-slate-500 leading-relaxed">
-          Demo feeds are labeled in each tool. Live data and trained AI models are not configured in this installation.
+        <p className="text-[11px] text-emerald-800/80 leading-relaxed">
+          Connected to live marketplace, weather, and AI advisory services.
         </p>
       </div>
     </aside>

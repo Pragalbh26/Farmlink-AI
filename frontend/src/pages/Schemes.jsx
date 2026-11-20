@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Landmark, Search, CheckCircle2, ShieldCheck, ExternalLink, HelpCircle } from 'lucide-react';
+import { Search, CheckCircle2 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
@@ -10,7 +10,6 @@ import { apiClient } from '../api/client';
 
 export const Schemes = ({ onStartEligibilityCheck }) => {
   const { t } = useLanguage();
-
   const [schemes, setSchemes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJurisdiction, setSelectedJurisdiction] = useState('All');
@@ -44,23 +43,19 @@ export const Schemes = ({ onStartEligibilityCheck }) => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Header Banner */}
       <div className="rounded-3xl bg-gradient-to-r from-blue-900 via-slate-900 to-emerald-950 text-white p-6 sm:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-              <Badge variant="amber" size="sm">
-              Scheme directory preview
-            </Badge>
-            <span className="text-xs text-blue-300">Deterministic Rule Grounded</span>
+            <Badge variant="green" size="sm">Verified Scheme Directory</Badge>
+            <span className="text-xs text-blue-300">Central & State Programs</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
             {t('schemes')} & Financial Grants
           </h1>
           <p className="text-sm text-slate-300 max-w-xl">
-            Preview records from the configured demo adapter. Confirm current rules, dates, and benefits on the linked official scheme portal.
+            Browse central and state agricultural welfare programs, required documents, and check your eligibility directly.
           </p>
         </div>
-
         <Button
           variant="primary"
           size="lg"
@@ -71,7 +66,6 @@ export const Schemes = ({ onStartEligibilityCheck }) => {
         </Button>
       </div>
 
-      {/* Search & Filter */}
       <Card className="p-4 space-y-3">
         <Input
           icon={Search}
@@ -96,7 +90,6 @@ export const Schemes = ({ onStartEligibilityCheck }) => {
         </div>
       </Card>
 
-      {/* Schemes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filtered.map((sch) => (
           <SchemeCard

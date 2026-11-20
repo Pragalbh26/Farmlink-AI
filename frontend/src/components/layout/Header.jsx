@@ -10,7 +10,6 @@ export const Header = ({ currentTab, onSelectTab }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-3 transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        {/* Brand Logo */}
         <div
           onClick={() => onSelectTab('dashboard')}
           className="flex items-center gap-2.5 cursor-pointer group"
@@ -21,7 +20,7 @@ export const Header = ({ currentTab, onSelectTab }) => {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold text-xl sm:text-2xl text-slate-900 tracking-tight">
-                Agri<span className="text-emerald-700">Connect</span>
+                FarmLink<span className="text-emerald-700"> AI</span>
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium hidden md:block">
@@ -30,22 +29,20 @@ export const Header = ({ currentTab, onSelectTab }) => {
           </div>
         </div>
 
-          {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold capitalize">
             {t(`role_${user?.role}`)}
           </div>
-          {/* Bilingual Language Switcher */}
+
           <button
             onClick={toggleLanguage}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition cursor-pointer touch-target justify-center"
-            title="Toggle English / हिन्दी"
+            title="Toggle English / Hindi"
           >
             <Globe className="w-4 h-4 text-emerald-700" />
-            <span>{lang === 'en' ? 'English' : 'हिन्दी'}</span>
+            <span>{lang === 'en' ? 'English' : 'हिंदी'}</span>
           </button>
 
-          {/* User Profile avatar */}
           <button
             onClick={() => onSelectTab('profile')}
             className={`flex items-center gap-2 p-1.5 sm:px-3 sm:py-2 rounded-xl border transition cursor-pointer touch-target ${
@@ -55,7 +52,7 @@ export const Header = ({ currentTab, onSelectTab }) => {
             }`}
           >
             <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-800">
-              {user?.avatar || '👤'}
+              {(user?.name || 'U').charAt(0).toUpperCase()}
             </div>
             <div className="text-left hidden lg:block">
               <p className="text-xs font-bold text-slate-900 truncate max-w-[120px]">{user?.name}</p>

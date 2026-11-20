@@ -3,10 +3,10 @@ import { Sparkles } from 'lucide-react';
 
 export const SuggestionChips = ({ onSelectPrompt }) => {
   const suggestions = [
-    { label: '🌾 Am I eligible for PM-KISAN?', query: 'am i eligible for pm kisan?' },
-    { label: '🍅 Why are tomato prices falling in Pune?', query: 'why are tomato prices fluctuating in pune?' },
-    { label: '🍃 How to prevent leaf curl in chili?', query: 'how to prevent leaf curl in chili?' },
-    { label: '🧪 Subsidy on helicopter farming (Abstention test)', query: 'what is the subsidy on helicopter farming in rajasthan?' },
+    { label: 'Am I eligible for PM-KISAN?', query: 'Am I eligible for PM-KISAN?' },
+    { label: 'Tomato price outlook this week', query: 'What is the tomato price outlook this week?' },
+    { label: 'How to prevent leaf curl in chili?', query: 'How to prevent leaf curl in chili?' },
+    { label: 'Documents needed for Kisan Credit Card', query: 'What documents are needed for Kisan Credit Card?' },
   ];
 
   return (

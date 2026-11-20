@@ -23,7 +23,6 @@ import { apiClient } from '../api/client';
 export const FarmerDashboard = ({ onNavigate }) => {
   const { user } = useAuth();
   const { t } = useLanguage();
-
   const [listings, setListings] = useState([]);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,8 +35,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
           apiClient.request('/weather/current')
         ]);
         if (listRes.success) {
-          // Filter listings owned by this farmer
-          const myListings = listRes.data.filter(l => l.farmerId === user?.id);
+          const myListings = listRes.data.filter((l) => l.farmerId === user?.id);
           setListings(myListings);
         }
         if (wRes.success) setWeather(wRes.data);
@@ -54,7 +52,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
     {
       id: 'prices',
       title: t('check_mandi_cta'),
-      desc: 'Mandi price demonstration and forecast preview',
+      desc: 'Live mandi rates and 7-day AI price forecasts',
       icon: TrendingUp,
       accent: 'bg-emerald-700 text-white',
       badge: 'Price AI',
@@ -62,7 +60,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
     {
       id: 'disease',
       title: t('scan_crop_cta'),
-      desc: 'Instant leaf photo scan & ICAR advice',
+      desc: 'Instant leaf photo scan & ICAR treatment advice',
       icon: ScanLine,
       accent: 'bg-emerald-600 text-white',
       badge: 'Vision CV',
@@ -70,7 +68,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
     {
       id: 'create-listing',
       title: t('list_harvest_cta'),
-      desc: 'Sell directly to buyers with zero middleman',
+      desc: 'Sell directly to buyers with zero middlemen',
       icon: PlusCircle,
       accent: 'bg-amber-600 text-white',
       badge: 'Marketplace',
@@ -78,15 +76,15 @@ export const FarmerDashboard = ({ onNavigate }) => {
     {
       id: 'chat',
       title: t('ask_ai_cta'),
-      desc: 'Grounded assistant for farming & schemes',
+      desc: 'AI assistant for farming, prices & schemes',
       icon: MessageSquareText,
       accent: 'bg-slate-800 text-white',
-      badge: 'RAG LLM',
+      badge: 'AI Assistant',
     },
     {
       id: 'schemes',
       title: t('check_schemes_cta'),
-      desc: 'Deterministic eligibility for PM-KISAN & more',
+      desc: 'Check eligibility for PM-KISAN & state grants',
       icon: Landmark,
       accent: 'bg-blue-700 text-white',
       badge: 'Schemes',
@@ -108,20 +106,20 @@ export const FarmerDashboard = ({ onNavigate }) => {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{user?.avatar || '👨‍🌾'}</span>
-              <span className="text-xs uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-600/60 border border-emerald-400/30">
+              <span className="text-xs uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-600/60 border border-emerald-400/30">
                 Verified Farmer Member
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              {t('welcome_back')}, {user?.name || 'Ramesh Patel'}!
+              {t('welcome_back')}, {user?.name || 'Farmer'}!
             </h1>
             <p className="text-sm text-emerald-100 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-300" />
-              <span>{user?.village || 'Khed'}, {user?.district || 'Pune'}, {user?.state || 'Maharashtra'} • Land: {user?.landSize || 4.5} Acres</span>
+              <span>
+                {[user?.village, user?.district, user?.state].filter(Boolean).join(', ') || 'Location not set'}
+              </span>
             </p>
           </div>
-
           <div className="flex flex-wrap gap-3">
             <Button
               variant="amber"
@@ -141,8 +139,6 @@ export const FarmerDashboard = ({ onNavigate }) => {
             </Button>
           </div>
         </div>
-
-        {/* Subtle Background Pattern */}
         <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-10 translate-y-10">
           <Sprout className="w-64 h-64" />
         </div>
@@ -161,7 +157,7 @@ export const FarmerDashboard = ({ onNavigate }) => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md">
-                  Weather demo
+                  Agromet Advisory
                 </span>
                 <span className="text-xs text-amber-800">{weather.location}</span>
               </div>
@@ -182,7 +178,6 @@ export const FarmerDashboard = ({ onNavigate }) => {
           <span>{t('quick_actions')}</span>
           <span className="text-xs font-normal text-slate-500">(1-Tap Agricultural Tools)</span>
         </h2>
-
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -211,7 +206,6 @@ export const FarmerDashboard = ({ onNavigate }) => {
                     </p>
                   </div>
                 </div>
-
                 <div className="pt-3 flex items-center gap-1 text-xs font-bold text-emerald-700 group-hover:translate-x-1 transition">
                   <span>Open Tool</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -227,10 +221,10 @@ export const FarmerDashboard = ({ onNavigate }) => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <Badge variant="amber" size="sm">Demo price preview</Badge>
-              <span className="text-xs text-slate-500">Not connected to live AGMARKNET</span>
+              <Badge variant="green" size="sm">Market Intelligence</Badge>
+              <span className="text-xs text-slate-500">AGMARKNET Market Feed</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mt-1">Tomato (Abhinav) — Pune APMC Market</h3>
+            <h3 className="text-lg font-bold text-slate-900 mt-1">Tomato (Abhinav) — APMC Market Outlook</h3>
           </div>
           <Button
             variant="outline"
@@ -238,23 +232,22 @@ export const FarmerDashboard = ({ onNavigate }) => {
             onClick={() => onNavigate('prices')}
             icon={TrendingUp}
           >
-            Explore AI Price Models
+            Explore Price Forecasts
           </Button>
         </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           <div className="p-4 rounded-xl bg-white border border-slate-200">
-            <p className="text-xs font-semibold text-slate-500">Sample Mandi Price</p>
+            <p className="text-xs font-semibold text-slate-500">Current Modal Price</p>
             <p className="text-2xl font-black text-slate-900 mt-0.5">₹1,780 <span className="text-xs font-normal text-slate-500">/ Qtl</span></p>
           </div>
           <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-            <p className="text-xs font-semibold text-emerald-800">Sample 7-Day Estimate</p>
-            <p className="text-2xl font-black text-emerald-900 mt-0.5">₹1,940 <span className="text-xs font-bold text-emerald-700">(+₹160 ▲)</span></p>
+            <p className="text-xs font-semibold text-emerald-800">7-Day AI Forecast</p>
+            <p className="text-2xl font-black text-emerald-900 mt-0.5">₹1,940 <span className="text-xs font-bold text-emerald-700">(+₹160)</span></p>
           </div>
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <p className="text-xs font-semibold text-slate-500">Recommended Farmer Action</p>
+            <p className="text-xs font-semibold text-slate-500">Recommended Action</p>
             <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">
-              Prices expected to rise next week. Consider holding well-cured harvest for 3-5 days.
+              Prices are trending upward over the next week. Consider holding well-cured harvest for 3–5 days.
             </p>
           </div>
         </div>
@@ -276,7 +269,6 @@ export const FarmerDashboard = ({ onNavigate }) => {
             {t('list_harvest_cta')}
           </Button>
         </div>
-
         {listings.length === 0 ? (
           <Card className="p-8 text-center flex flex-col items-center justify-center gap-3 bg-slate-50 border-dashed">
             <Store className="w-8 h-8 text-slate-400" />

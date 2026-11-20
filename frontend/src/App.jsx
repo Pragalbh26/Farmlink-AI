@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { LanguageProvider } from './context/LanguageContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { ToastProvider } from './context/ToastContext';
-import { AppLayout } from './components/layout/AppLayout';
 
+import { AppLayout } from './components/layout/AppLayout';
+import { Landing } from './pages/Landing';
 import { Onboarding } from './pages/Onboarding';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+
 import { FarmerDashboard } from './pages/FarmerDashboard';
 import { BuyerDashboard } from './pages/BuyerDashboard';
 import { TransporterDashboard } from './pages/TransporterDashboard';
@@ -25,37 +27,47 @@ import { Profile } from './pages/Profile';
 
 const AppContent = () => {
   const { user, isAuthenticated, isSessionLoading } = useAuth();
-
+  const { lang } = useLanguage();
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [selectedListing, setSelectedListing] = useState(null);
-  const [authView, setAuthView] = useState('login');
+  const [authView, setAuthView] = useState('landing');
 
   if (isSessionLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-slate-600" role="status">Restoring your secure session…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-600" role="status">
+        {lang === 'hi' ? 'आपका सुरक्षित सत्र बहाल हो रहा है...' : 'Restoring your secure session...'}
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
-    if (authView === 'login') {
-      return (
-        <Login
-          onGoRegister={() => setAuthView('register')}
-          onLoginSuccess={() => setCurrentTab('dashboard')}
-        />
-      );
-    }
-    if (authView === 'register') {
-      return (
-        <Register
-          onGoLogin={() => setAuthView('login')}
-          onRegisterSuccess={() => setCurrentTab('dashboard')}
-        />
-      );
-    }
     return (
-      <Onboarding
-        onSelectRole={() => setCurrentTab('dashboard')}
-        onGoLogin={() => setAuthView('login')}
-      />
+      <div key={lang}>
+        {authView === 'landing' && (
+          <Landing
+            onGoLogin={() => setAuthView('login')}
+            onGoRegister={() => setAuthView('register')}
+          />
+        )}
+        {authView === 'login' && (
+          <Login
+            onGoRegister={() => setAuthView('register')}
+            onLoginSuccess={() => setCurrentTab('dashboard')}
+          />
+        )}
+        {authView === 'register' && (
+          <Register
+            onGoLogin={() => setAuthView('login')}
+            onRegisterSuccess={() => setCurrentTab('dashboard')}
+          />
+        )}
+        {authView !== 'landing' && authView !== 'login' && authView !== 'register' && (
+          <Onboarding
+            onSelectRole={() => setCurrentTab('dashboard')}
+            onGoLogin={() => setAuthView('login')}
+          />
+        )}
+      </div>
     );
   }
 
@@ -69,7 +81,6 @@ const AppContent = () => {
     switch (currentTab) {
       case 'dashboard':
         return roleDashboard();
-
       case 'marketplace':
         if (user?.role === 'transporter') return roleDashboard();
         return (
@@ -81,7 +92,6 @@ const AppContent = () => {
             }}
           />
         );
-
       case 'listing-detail':
         if (user?.role === 'transporter') return roleDashboard();
         return (
@@ -91,7 +101,6 @@ const AppContent = () => {
             onOrderSuccess={() => setCurrentTab('orders')}
           />
         );
-
       case 'create-listing':
         if (user?.role !== 'farmer') return roleDashboard();
         return (
@@ -100,27 +109,21 @@ const AppContent = () => {
             onSuccess={() => setCurrentTab('marketplace')}
           />
         );
-
       case 'orders':
         if (user?.role === 'transporter') return roleDashboard();
         return <Orders onNavigate={setCurrentTab} />;
-
       case 'prices':
         if (user?.role === 'transporter') return roleDashboard();
         return <PricePrediction />;
-
       case 'disease':
         if (user?.role === 'transporter') return roleDashboard();
         return <DiseaseDetection />;
-
       case 'chat':
         if (user?.role === 'transporter') return roleDashboard();
         return <Chatbot />;
-
       case 'weather':
         if (user?.role === 'transporter') return roleDashboard();
         return <Weather />;
-
       case 'schemes':
         if (user?.role !== 'farmer') return roleDashboard();
         return (
@@ -128,7 +131,6 @@ const AppContent = () => {
             onStartEligibilityCheck={() => setCurrentTab('eligibility-check')}
           />
         );
-
       case 'eligibility-check':
         if (user?.role !== 'farmer') return roleDashboard();
         return (
@@ -136,21 +138,18 @@ const AppContent = () => {
             onBack={() => setCurrentTab('schemes')}
           />
         );
-
       case 'transport':
         if (user?.role === 'transporter') return roleDashboard();
         return <Transport />;
-
       case 'profile':
-        return <Profile onLogout={() => setAuthView('login')} />;
-
+        return <Profile onLogout={() => setAuthView('landing')} />;
       default:
         return roleDashboard();
     }
   };
 
   return (
-    <AppLayout currentTab={currentTab} onSelectTab={setCurrentTab}>
+    <AppLayout key={lang} currentTab={currentTab} onSelectTab={setCurrentTab}>
       {renderScreen()}
     </AppLayout>
   );

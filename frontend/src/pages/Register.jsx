@@ -59,7 +59,7 @@ export const Register = ({ onGoLogin, onRegisterSuccess }) => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-lg w-full space-y-6">
         <div className="text-center space-y-1">
-          <h2 className="text-2xl font-black text-slate-900">Create AgriConnect Account</h2>
+          <h2 className="text-2xl font-black text-slate-900">Create FarmLink AI Account</h2>
           <p className="text-sm text-slate-500">Register as a Farmer, Wholesale Buyer, or Transporter</p>
         </div>
 
@@ -112,7 +112,7 @@ export const Register = ({ onGoLogin, onRegisterSuccess }) => {
               required
             />
 
-            <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" required />
+            <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" required />
             <Input label="Confirm Password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" required />
 
             <div className="grid grid-cols-2 gap-3">

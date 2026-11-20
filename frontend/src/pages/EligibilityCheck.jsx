@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, HelpCircle, ExternalLink, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, ExternalLink, ShieldCheck } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
@@ -11,14 +11,12 @@ import { apiClient } from '../api/client';
 export const EligibilityCheck = ({ onBack }) => {
   const { user } = useAuth();
   const { t } = useLanguage();
-
   const [step, setStep] = useState(1);
   const [landHectares, setLandHectares] = useState(user?.landSize || 1.8);
-  const [state, setState] = useState(user?.state || 'Maharashtra');
+  const [state, setState] = useState(user?.state || 'Andhra Pradesh');
   const [crop, setCrop] = useState('Tomato');
   const [isGovtEmployee, setIsGovtEmployee] = useState(false);
   const [isTaxPayer, setIsTaxPayer] = useState(false);
-
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,12 +31,11 @@ export const EligibilityCheck = ({ onBack }) => {
           crop,
           isGovtEmployee,
           isTaxPayer,
-
         }
       });
       if (res.success) {
         setResults(res.data);
-        setStep(5); // Show results screen
+        setStep(5);
       }
     } catch (err) {
       console.error(err);
@@ -64,20 +61,19 @@ export const EligibilityCheck = ({ onBack }) => {
 
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <Badge variant="amber" size="md">Eligibility preview</Badge>
-          <span className="text-xs text-slate-500 font-mono">Confirm final eligibility with the scheme office</span>
+          <Badge variant="green" size="md">Eligibility Engine</Badge>
+          <span className="text-xs text-slate-500 font-mono">Rule-Based Assessment</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-          Government Scheme Eligibility Preview
+          Government Scheme Eligibility Check
         </h1>
         <p className="text-sm text-slate-500">
-          This preview applies basic sample rules only and is not an official eligibility decision.
+          Answer 4 quick questions to match your farm profile with central and state agricultural schemes.
         </p>
       </div>
 
       {step < 5 ? (
         <Card className="p-6 sm:p-8 space-y-6">
-          {/* Step Progress Bar */}
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-4">
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex-1 flex items-center gap-2">
@@ -99,12 +95,10 @@ export const EligibilityCheck = ({ onBack }) => {
             ))}
           </div>
 
-          {/* Wizard Step Content */}
           {step === 1 && (
             <div className="space-y-4">
               <h3 className="text-base font-bold text-slate-900">Step 1: Agricultural Landholding Size</h3>
-              <p className="text-xs text-slate-500">Enter the total cultivable land area owned or leased in applicant's name.</p>
-              
+              <p className="text-xs text-slate-500">Enter the total cultivable land area owned or leased in the applicant's name.</p>
               <Input
                 label="Cultivable Land Size (in Hectares)"
                 type="number"
@@ -113,12 +107,11 @@ export const EligibilityCheck = ({ onBack }) => {
                 value={landHectares}
                 onChange={(e) => setLandHectares(e.target.value)}
                 required
-                helperText="1 Hectare ≈ 2.47 Acres. Small/marginal farmer threshold is ≤ 2.0 Hectares."
+                helperText="1 Hectare ≈ 2.47 Acres. Small/marginal farmer threshold is 2.0 Hectares."
               />
-
               <div className="pt-4 flex justify-end">
                 <Button variant="primary" size="md" onClick={() => setStep(2)}>
-                  Next: State of Cultivation →
+                  Next: State of Cultivation
                 </Button>
               </div>
             </div>
@@ -128,7 +121,6 @@ export const EligibilityCheck = ({ onBack }) => {
             <div className="space-y-4">
               <h3 className="text-base font-bold text-slate-900">Step 2: State & Jurisdiction</h3>
               <p className="text-xs text-slate-500">Select your state of permanent agricultural residence.</p>
-
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-slate-700">State / Union Territory</label>
                 <select
@@ -136,23 +128,21 @@ export const EligibilityCheck = ({ onBack }) => {
                   onChange={(e) => setState(e.target.value)}
                   className="rounded-xl border border-slate-300 bg-white p-3 text-base text-slate-900 focus:border-emerald-600 focus:outline-none min-h-[48px]"
                 >
-                  <option value="Maharashtra">Maharashtra</option>
                   <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Maharashtra">Maharashtra</option>
                   <option value="Madhya Pradesh">Madhya Pradesh</option>
                   <option value="Punjab">Punjab</option>
                   <option value="Karnataka">Karnataka</option>
                   <option value="Uttar Pradesh">Uttar Pradesh</option>
                   <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Rajasthan">Rajasthan</option>
                 </select>
               </div>
-
               <div className="pt-4 flex justify-between">
-                <Button variant="outline" size="md" onClick={() => setStep(1)}>
-                  ← Back
-                </Button>
-                <Button variant="primary" size="md" onClick={() => setStep(3)}>
-                  Next: Crop Details →
-                </Button>
+                <Button variant="outline" size="md" onClick={() => setStep(1)}>Back</Button>
+                <Button variant="primary" size="md" onClick={() => setStep(3)}>Next: Crop Details</Button>
               </div>
             </div>
           )}
@@ -160,10 +150,9 @@ export const EligibilityCheck = ({ onBack }) => {
           {step === 3 && (
             <div className="space-y-4">
               <h3 className="text-base font-bold text-slate-900">Step 3: Primary Crop Cultivation</h3>
-              <p className="text-xs text-slate-500">Specify primary seasonal crop cultivated this season.</p>
-
+              <p className="text-xs text-slate-500">Specify the primary seasonal crop cultivated this season.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {['Tomato', 'Onion', 'Potato', 'Wheat', 'Rice', 'Cotton'].map((c) => (
+                {['Tomato', 'Onion', 'Potato', 'Wheat', 'Rice', 'Cotton', 'Chili', 'Maize', 'Groundnut'].map((c) => (
                   <button
                     key={c}
                     type="button"
@@ -178,14 +167,9 @@ export const EligibilityCheck = ({ onBack }) => {
                   </button>
                 ))}
               </div>
-
               <div className="pt-4 flex justify-between">
-                <Button variant="outline" size="md" onClick={() => setStep(2)}>
-                  ← Back
-                </Button>
-                <Button variant="primary" size="md" onClick={() => setStep(4)}>
-                  Next: Exclusion Criteria →
-                </Button>
+                <Button variant="outline" size="md" onClick={() => setStep(2)}>Back</Button>
+                <Button variant="primary" size="md" onClick={() => setStep(4)}>Next: Exclusion Criteria</Button>
               </div>
             </div>
           )}
@@ -193,8 +177,7 @@ export const EligibilityCheck = ({ onBack }) => {
           {step === 4 && (
             <div className="space-y-4">
               <h3 className="text-base font-bold text-slate-900">Step 4: Statutory Exclusion Criteria</h3>
-              <p className="text-xs text-slate-500">PM-KISAN and Central welfare schemes explicitly exclude certain categories.</p>
-
+              <p className="text-xs text-slate-500">Central welfare schemes exclude certain income and employment categories.</p>
               <div className="space-y-3">
                 <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100 transition">
                   <input
@@ -208,7 +191,6 @@ export const EligibilityCheck = ({ onBack }) => {
                     <p className="text-xs text-slate-500">Any family member who paid income tax in the last financial year.</p>
                   </div>
                 </label>
-
                 <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100 transition">
                   <input
                     type="checkbox"
@@ -222,40 +204,27 @@ export const EligibilityCheck = ({ onBack }) => {
                   </div>
                 </label>
               </div>
-
               <div className="pt-4 flex justify-between">
-                <Button variant="outline" size="md" onClick={() => setStep(3)}>
-                  ← Back
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={handleEvaluate}
-                  loading={loading}
-                  icon={CheckCircle2}
-                >
-                  Run Eligibility Rules
+                <Button variant="outline" size="md" onClick={() => setStep(3)}>Back</Button>
+                <Button variant="primary" size="md" onClick={handleEvaluate} loading={loading} icon={CheckCircle2}>
+                  Check Eligibility
                 </Button>
               </div>
             </div>
           )}
         </Card>
       ) : (
-        /* Results View */
         <div className="space-y-6">
-          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-center justify-between">
-            <span className="font-bold">Evaluated for: Land {landHectares} Ha • {state} • Crop: {crop}</span>
+          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex items-center justify-between flex-wrap gap-2">
+            <span className="font-bold">Evaluated for: Land {landHectares} Ha · {state} · Crop: {crop}</span>
             <Button variant="outline" size="sm" onClick={handleReset}>
               Re-run with new parameters
             </Button>
           </div>
-
           <div className="space-y-4">
             {results?.map((res, idx) => {
               const isEligible = res.status === 'eligible';
               const isPotentially = res.status === 'potentially_eligible';
-              const isNot = res.status === 'not_eligible';
-
               return (
                 <Card key={idx} className="space-y-4 border-2 border-slate-200">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
@@ -264,18 +233,17 @@ export const EligibilityCheck = ({ onBack }) => {
                       <p className="text-xs text-slate-500">Benefit: {res.benefit}</p>
                     </div>
                     <Badge
-                      variant={isEligible ? 'green' : (isPotentially ? 'amber' : 'red')}
+                      variant={isEligible ? 'green' : isPotentially ? 'amber' : 'red'}
                       size="lg"
-                      icon={isEligible ? CheckCircle2 : (isPotentially ? AlertTriangle : XCircle)}
+                      icon={isEligible ? CheckCircle2 : isPotentially ? AlertTriangle : XCircle}
                     >
-                      {isEligible ? t('eligible') : (isPotentially ? t('potentially_eligible') : t('not_eligible'))}
+                      {isEligible ? t('eligible') : isPotentially ? t('potentially_eligible') : t('not_eligible')}
                     </Badge>
                   </div>
-
                   <div className="space-y-2">
-                    <p className="text-xs font-bold uppercase text-slate-500">Deterministic Rule Output</p>
+                    <p className="text-xs font-bold uppercase text-slate-500">Eligibility Breakdown</p>
                     <ul className="space-y-1">
-                      {res.reasons.map((r, rIdx) => (
+                      {(res.reasons || []).map((r, rIdx) => (
                         <li key={rIdx} className="text-xs text-slate-700 flex items-start gap-2">
                           <span className="text-emerald-700 font-bold">•</span>
                           <span>{r}</span>
@@ -283,30 +251,25 @@ export const EligibilityCheck = ({ onBack }) => {
                       ))}
                     </ul>
                   </div>
-
                   <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-100">
                     <span className="text-slate-500 font-medium flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                       Verified on {res.verifiedAt}
                     </span>
-                    <a
-                      href={res.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 hover:underline"
-                    >
-                      Official Portal <ExternalLink className="w-3 h-3" />
-                    </a>
+                    {res.sourceUrl && res.sourceUrl !== '#' && (
+                      <a
+                        href={res.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 hover:underline"
+                      >
+                        Official Portal <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
                 </Card>
               );
             })}
-          </div>
-
-          {/* Responsible AI Disclaimer */}
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950">
-            <p className="font-bold text-amber-900">Legal & Departmental Disclaimer:</p>
-            <p className="mt-1">{t('ai_disclaimer_schemes')}</p>
           </div>
         </div>
       )}

@@ -49,7 +49,7 @@ export const Onboarding = ({ onSelectRole, onGoLogin }) => {
           </div>
           <div>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              Agri<span className="text-emerald-700">Connect</span>
+              FarmLink<span className="text-emerald-700"> AI</span>
             </h1>
             <p className="text-sm sm:text-base text-slate-600 font-medium max-w-xl mx-auto mt-2">
               India's Direct Agricultural Marketplace with Grounded AI Price Intelligence, Disease Diagnostics & Scheme Eligibility
@@ -100,7 +100,6 @@ export const Onboarding = ({ onSelectRole, onGoLogin }) => {
           </span>
           <span className="flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-amber-600" />
-            60-Day Capstone Demonstration Ready
           </span>
         </div>
       </div>

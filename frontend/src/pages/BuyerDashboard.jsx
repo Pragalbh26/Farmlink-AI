@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Store, TrendingUp, Package, ShieldCheck, ArrowRight, MapPin, Truck } from 'lucide-react';
+import { Store, TrendingUp, Package, ArrowRight, MapPin } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { ListingCard } from '../components/marketplace/ListingCard';
 import { OrderModal } from '../components/marketplace/OrderModal';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
 import { apiClient } from '../api/client';
 
 export const BuyerDashboard = ({ onNavigate }) => {
   const { user } = useAuth();
-  const { t } = useLanguage();
-
   const [listings, setListings] = useState([]);
   const [orders, setOrders] = useState([]);
   const [selectedListingForOrder, setSelectedListingForOrder] = useState(null);
@@ -44,20 +41,18 @@ export const BuyerDashboard = ({ onNavigate }) => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{user?.avatar || '🏢'}</span>
-              <span className="text-xs uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-600/50 border border-emerald-400/30">
+              <span className="text-xs uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-600/50 border border-emerald-400/30">
                 Verified Wholesale Buyer
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              {user?.organization || 'GreenFresh Agri Commodities'}
+              {user?.organization || user?.name || 'Wholesale Buyer'}
             </h1>
             <p className="text-sm text-slate-300 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>{user?.district || 'Mumbai Terminal'}, {user?.state || 'Maharashtra'} • Direct Farm Procurement</span>
+              <span>{[user?.district, user?.state].filter(Boolean).join(', ') || 'Direct Farm Procurement'}</span>
             </p>
           </div>
-
           <div className="flex gap-3">
             <Button
               variant="primary"
@@ -91,7 +86,6 @@ export const BuyerDashboard = ({ onNavigate }) => {
             <p className="text-2xl font-black text-slate-900">{listings.length} Lots</p>
           </div>
         </Card>
-
         <Card className="p-5 flex items-center gap-4">
           <div className="p-3 bg-blue-100 text-blue-800 rounded-2xl">
             <Package className="w-6 h-6" />
@@ -101,14 +95,13 @@ export const BuyerDashboard = ({ onNavigate }) => {
             <p className="text-2xl font-black text-slate-900">{orders.length} Active</p>
           </div>
         </Card>
-
-        <Card className="p-5 flex items-center gap-4">
+        <Card hover onClick={() => onNavigate('prices')} className="p-5 flex items-center gap-4">
           <div className="p-3 bg-amber-100 text-amber-800 rounded-2xl">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
             <p className="text-xs font-semibold text-slate-500">Mandi Price Index</p>
-            <p className="text-2xl font-black text-emerald-700">Demo estimates</p>
+            <p className="text-2xl font-black text-emerald-700">Live Trends</p>
           </div>
         </Card>
       </div>
@@ -128,7 +121,6 @@ export const BuyerDashboard = ({ onNavigate }) => {
               View Full Order History <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-
           <div className="divide-y divide-slate-100">
             {orders.slice(0, 3).map((ord) => (
               <div key={ord.id} className="py-3 flex items-center justify-between gap-4">
@@ -140,7 +132,7 @@ export const BuyerDashboard = ({ onNavigate }) => {
                     </Badge>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Farmer: {ord.farmerName} • Qty: {ord.quantity} {ord.unit} • Total: ₹{ord.totalAmount.toLocaleString('en-IN')}
+                    Farmer: {ord.farmerName} · Qty: {ord.quantity} {ord.unit} · Total: ₹{Number(ord.totalAmount || 0).toLocaleString('en-IN')}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
@@ -167,7 +159,6 @@ export const BuyerDashboard = ({ onNavigate }) => {
             Explore All Crops
           </Button>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {listings.slice(0, 3).map((l) => (
             <ListingCard

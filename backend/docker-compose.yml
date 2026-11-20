@@ -19,15 +19,15 @@ services:
     image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_DB: agriconnect_db
-      POSTGRES_USER: agriconnect_user
-      POSTGRES_PASSWORD: agriconnect_pass
+      POSTGRES_DB: farmlink_db
+      POSTGRES_USER: farmlink_user
+      POSTGRES_PASSWORD: farmlink_pass
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agriconnect_user -d agriconnect_db"]
+      test: ["CMD-SHELL", "pg_isready -U farmlink_user -d farmlink_db"]
       interval: 5s
       timeout: 5s
       retries: 5
